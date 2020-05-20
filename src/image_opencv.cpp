@@ -823,6 +823,35 @@ extern "C" image get_image_from_stream_letterbox(cap_cv *cap, int w, int h, int 
 }
 // ----------------------------------------
 
+extern "C" image get_uyvy_image_from_stream_resize(unsigned char *input, int w, int h, int c, mat_cv** in_img)
+{
+    c = c ? c : 3;
+    cv::Mat *src = NULL;
+
+    cv::Mat yuv_frame(1080, 1920, CV_8UC2, input);
+    cv::Mat rgb_frame(1080, 1920, CV_8UC3);
+    cv::cvtColor(yuv_frame, rgb_frame, cv::COLOR_YUV2BGR_UYVY, 0);
+    //cv::resize(rgb_frame, rgb_frame, cv::Size(416,416), 0, 0, cv::INTER_LINEAR);
+    //cv::cvtColor(bgr_frame, rgb_frame, cv::COLOR_BGR2RGB, 0);
+    *in_img = (mat_cv *)new cv::Mat(rgb_frame.rows, rgb_frame.cols, CV_8UC(c));
+    cv::resize(rgb_frame, **(cv::Mat**)in_img, (*(cv::Mat**)in_img)->size(), 0, 0, cv::INTER_LINEAR);
+    //*(cv::Mat **)in_img = &rgb_frame;
+   
+
+    //*(cv::Mat **)in_img = &bgr_frame;
+
+    cv::Mat new_img = cv::Mat(h, w, CV_8UC(c));
+    
+    cv::resize(rgb_frame, new_img, new_img.size(), 0, 0, cv::INTER_LINEAR);
+    if (c > 1) cv::cvtColor(new_img, new_img, cv::COLOR_RGB2BGR);
+    image im = mat_to_image(new_img);
+
+    //show_image_cv(im, "im");
+    //show_image_mat(*in_img, "in_img");
+    return im;
+}
+// ----------------------------------------
+
 // ====================================================================
 // Image Saving
 // ====================================================================
@@ -872,7 +901,7 @@ extern "C" void draw_detections_cv_v3(mat_cv* mat, detection *dets, int num, flo
         if (!show_img) return;
         static int frame_id = 0;
         frame_id++;
-
+        
         for (i = 0; i < num; ++i) {
             char labelstr[4096] = { 0 };
             int class_id = -1;
@@ -983,7 +1012,6 @@ extern "C" void draw_detections_cv_v3(mat_cv* mat, detection *dets, int num, flo
                     (float)left, (float)top, b.w*show_img->cols, b.h*show_img->rows);
                 else
                     printf("\n");
-
                 cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, width, 8, 0);
                 cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, CV_FILLED, 8, 0);    // filled
                 cv::Scalar black_color = CV_RGB(0, 0, 0);

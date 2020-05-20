@@ -79,7 +79,8 @@ void fullHD_input(int argc, char **argv)
     int classes = option_find_int(options, "classes", 20);
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
-    const char* filename = "E:/darknet/data/frames0.yuv";
+    //const char* filename = "E:/darknet/data/frames0.yuv";
+    const char* filename = "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/darknet/Out_60s_side_view.yuv";
 
     run_fullHD(cfg, weights, TRESH, filename, names, classes);
 }

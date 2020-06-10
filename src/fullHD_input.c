@@ -80,7 +80,7 @@ void fullHD_input(int argc, char **argv)
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
     //const char* filename = "E:/darknet/data/frames0.yuv";
-    const char* filename = "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/darknet/Out_60s_side_view.yuv";
+    const char* filename = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-05-21/SSD-1/Out1.yuv";
 
     run_fullHD(cfg, weights, TRESH, filename, names, classes);
 }
@@ -182,7 +182,9 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
 
                 ++frame_id;
 
-                draw_detections_cv_v3(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes, 0/*demo_ext_output*/);
+                // draw_detections_cv_v3(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes, 0/*demo_ext_output*/);
+                // draw_detections_cv_v3(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, 1, 0/*demo_ext_output*/);
+                draw_detection_and_point(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes, 0);
                 free_detections(local_dets, local_nboxes);
 
                 printf("\nFPS:%.1f \t AVG_FPS:%.1f\n", fps, avg_fps);

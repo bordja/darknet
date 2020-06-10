@@ -1027,7 +1027,156 @@ extern "C" void draw_detections_cv_v3(mat_cv* mat, detection *dets, int num, flo
         cerr << "OpenCV exception: draw_detections_cv_v3() \n";
     }
 }
-// ----------------------------------------
+
+// ====================================================================
+// Draw detection and insert mass center for a single object
+// ====================================================================
+extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
+{
+    static bool begin = true;
+    static cv::Point current_top_left;
+    static cv::Point current_bottom_right;
+    static cv::Point current_center_point;
+    cv::Point threshold_value;
+    bool found = true;
+    int car_number = 0;
+    int end_offset = 40;
+
+    cv::Point pt_text, pt_text_bg1, pt_text_bg2;
+    float font_size;
+    cv::Scalar color;
+    int width;
+
+    int classID_required = 2;
+    cv::Mat *show_img = (cv::Mat*)mat;
+    int i, j;
+    if (!show_img) return;
+    static int frame_id = 0;
+    frame_id++;
+
+    char labelstr[4096] = { 0 };
+    threshold_value.x = 20;
+    threshold_value.y = 20;
+    
+    for (i = 0; i < num; ++i) {
+        for (int l = 0; l < strlen(labelstr); ++l)
+            labelstr[l] = 0;
+        int class_id = -1;
+        for (j = 0; j < classes; ++j) {
+            int show = strncmp(names[j], "dont_show", 9);
+            if (dets[i].prob[j] > thresh && show) {
+                if (class_id < 0) {
+                    strcat(labelstr, names[j]);
+                    class_id = j;
+                    char buff[10];
+                    sprintf(buff, " (%2.0f%%)", dets[i].prob[j] * 100);
+                    strcat(labelstr, buff);
+                    printf("%s: %.0f%% ", names[j], dets[i].prob[j] * 100);
+                }
+                else {
+                    strcat(labelstr, ", ");
+                    strcat(labelstr, names[j]);
+                    printf(", %s: %.0f%% ", names[j], dets[i].prob[j] * 100);
+                }
+            }
+        }
+        if (class_id == classID_required) {
+            width = std::max(1.0f, show_img->rows * .002f);
+            int offset = class_id * 123457 % classes;
+            float red = get_color(2, offset, classes);
+            float green = get_color(1, offset, classes);
+            float blue = get_color(0, offset, classes);
+            float rgb[3];
+
+            rgb[0] = red;
+            rgb[1] = green;
+            rgb[2] = blue;
+            box b = dets[i].bbox;
+            if (std::isnan(b.w) || std::isinf(b.w)) b.w = 0.5;
+            if (std::isnan(b.h) || std::isinf(b.h)) b.h = 0.5;
+            if (std::isnan(b.x) || std::isinf(b.x)) b.x = 0.5;
+            if (std::isnan(b.y) || std::isinf(b.y)) b.y = 0.5;
+            b.w = (b.w < 1) ? b.w : 1;
+            b.h = (b.h < 1) ? b.h : 1;
+            b.x = (b.x < 1) ? b.x : 1;
+            b.y = (b.y < 1) ? b.y : 1;
+
+            int left = (b.x - b.w / 2.)*show_img->cols;
+            int right = (b.x + b.w / 2.)*show_img->cols;
+            int top = (b.y - b.h / 2.)*show_img->rows;
+            int bot = (b.y + b.h / 2.)*show_img->rows;
+
+            if (left < 0) left = 0;
+            if (right > show_img->cols - 1) right = show_img->cols - 1;
+            if (top < 0) top = 0;
+            if (bot > show_img->rows - 1) bot = show_img->rows - 1;
+
+            font_size = show_img->rows / 1000.F;
+            cv::Size const text_size = cv::getTextSize(labelstr, cv::FONT_HERSHEY_COMPLEX_SMALL, font_size, 1, 0);
+            cv::Point pt1, pt2;
+            pt1.x = left;
+            pt1.y = top;
+            pt2.x = right;
+            pt2.y = bot;
+            pt_text.x = left;
+            pt_text.y = top - 4;// 12;
+            pt_text_bg1.x = left;
+            pt_text_bg1.y = top - (3 + 18 * font_size);
+            pt_text_bg2.x = right;
+            if ((right - left) < text_size.width) pt_text_bg2.x = left + text_size.width;
+            pt_text_bg2.y = top;
+            color.val[0] = red * 256;
+            color.val[1] = green * 256;
+            color.val[2] = blue * 256;
+
+            if (begin)
+            {
+                if (++car_number == 6)
+                    begin = false;
+                else
+                    continue;
+                current_top_left.x = pt1.x;
+                current_top_left.y = pt1.y;
+                current_bottom_right.x = pt2.x;
+                current_bottom_right.y = pt2.y;
+                current_center_point.x = (pt1.x + pt2.x) / 2;
+                current_center_point.y = (pt1.y + pt2.y) / 2;
+            }
+
+            cv::Point center_point;
+            center_point.x = (pt1.x + pt2.x) / 2;
+            center_point.y = (pt1.y + pt2.y) / 2;
+
+            if (abs(center_point.x - current_center_point.x) <= threshold_value.x &&
+                abs(center_point.y - current_center_point.y) <= threshold_value.y)
+            {
+                current_top_left.x = pt1.x;
+                current_top_left.y = pt1.y;
+                current_bottom_right.x = pt2.x;
+                current_bottom_right.y = pt2.y;
+                current_center_point.x = center_point.x;
+                current_center_point.y = center_point.y;
+                break;
+            }
+        }
+    }
+
+    //cv::rectangle(*show_img, current_top_left, current_bottom_right, color, width, 8, 0);
+    printf("pt1 = (%d,%d), pt2 = (%d,%d)\n\n", current_top_left.x, current_top_left.y, current_bottom_right.x, current_bottom_right.y);
+    //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, width, 8, 0);
+    //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, CV_FILLED, 8, 0);    // filled
+    printf("width -> %d, height -> %d\n", show_img->cols, show_img->rows);
+    if ((current_center_point.x - end_offset >= 0) &&
+        (current_center_point.x + end_offset < show_img->cols) &&
+        (current_center_point.y - end_offset >= 0) &&
+        (current_center_point.y + end_offset < show_img->rows))
+    {
+        cv::Scalar black_color = CV_RGB(0, 0, 0);
+        cv::circle(*show_img, current_center_point, 8, cv::Scalar(255, 0, 255), -1);
+    }
+    
+    //cv::putText(*show_img, labelstr, pt_text, cv::FONT_HERSHEY_COMPLEX_SMALL, font_size, black_color, 2 * font_size, CV_AA);
+}
 
 // ====================================================================
 // Draw Loss & Accuracy chart

@@ -10,6 +10,7 @@
 #include "darknet.h"
 #include "option_list.h"
 #include "fullHD_input.h"
+#include <stdbool.h>
 
 #ifdef WIN32
 #include <time.h>
@@ -50,6 +51,7 @@ int frame_skip = 0;
 mat_cv* in_img;
 mat_cv* det_img;
 mat_cv* show_img;
+mat_cv* perspective_img;
 
 //std::ifstream yuv_stream;
 
@@ -80,14 +82,14 @@ void fullHD_input(int argc, char **argv)
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
     //const char* filename = "E:/darknet/data/frames0.yuv";
-    const char* filename = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-05-21/SSD-1/Out1.yuv";
+    const char* filename = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-05-21/SSD-1/Out2.yuv";
 
     run_fullHD(cfg, weights, TRESH, filename, names, classes);
 }
 
 void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filename, char **names, int classes) {
 
-    in_img = det_img = show_img = NULL;
+    in_img = det_img = show_img = perspective_img = NULL;
 
     image **alphabet = load_alphabet();
 
@@ -157,6 +159,9 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
         double start_time = get_time_point();
         float avg_fps = 0;
         int frame_counter = 0;
+        bool finished_clicking = false;
+        bool window_created = false;
+        int x_new, y_new;
 
         while (!fstream_eof()) {
             ++count;
@@ -181,15 +186,32 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                 printf("Objects:\n\n");
 
                 ++frame_id;
-
+                if (det_img != NULL)
+                    cv_copy_to_input_perspective((void*)det_img);
                 // draw_detections_cv_v3(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes, 0/*demo_ext_output*/);
                 // draw_detections_cv_v3(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, 1, 0/*demo_ext_output*/);
-                draw_detection_and_point(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes, 0);
+                draw_detection_and_point(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes);
+
+                if (!finished_clicking && show_img != NULL)
+                    finished_clicking = mouse_click_and_param_init((void*)show_img, "FullHD");
+                else if (show_img != NULL)
+                {
+                    show_image_mat(show_img, "FullHD");
+                    perspective_img = show_img;
+                    if (!window_created)
+                    {
+                        create_window_cv("Perspective transform", full_screen, WIDTH, HEIGHT);
+                        window_created = true;
+                    }
+                    get_perspective_transform((void*)perspective_img);
+                    pixel_perspective_transform((void*)perspective_img, x_detection, y_detection, &x_new, &y_new);
+                    show_image_mat(perspective_img, "Perspective transform");
+                }
+
                 free_detections(local_dets, local_nboxes);
 
                 printf("\nFPS:%.1f \t AVG_FPS:%.1f\n", fps, avg_fps);
 
-                show_image_mat(show_img, "FullHD");
                 int c = wait_key_cv(1);
                 if (c == 10) {
                     if (frame_skip == 0) frame_skip = 60;

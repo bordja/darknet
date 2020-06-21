@@ -271,6 +271,9 @@ list(APPEND sources
   ${CMAKE_CURRENT_LIST_DIR}/src/http_stream.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/image_opencv.cpp
   ${CMAKE_CURRENT_LIST_DIR}/src/image_fstream.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/IPM.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/mouse-event.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/src/perspective-transform.cpp
 )
 #remove darknet.c file which is necessary only for the executable, not for the lib
 list(REMOVE_ITEM sources

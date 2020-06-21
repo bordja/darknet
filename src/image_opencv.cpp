@@ -97,6 +97,8 @@ extern "C" {
 //    cv::Mat ipl_to_mat(IplImage *ipl);
 //    IplImage *mat_to_ipl(cv::Mat mat);
 
+int x_detection;
+int y_detection;
 
 extern "C" mat_cv *load_image_mat_cv(const char *filename, int flag)
 {
@@ -1131,7 +1133,7 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
 
             if (begin)
             {
-                if (++car_number == 6)
+                if (++car_number == 16)
                     begin = false;
                 else
                     continue;
@@ -1171,7 +1173,9 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
         (current_center_point.y - end_offset >= 0) &&
         (current_center_point.y + end_offset < show_img->rows))
     {
-        cv::Scalar black_color = CV_RGB(0, 0, 0);
+        x_detection = current_center_point.x;
+        y_detection = current_center_point.y;
+        //cv::Scalar black_color = CV_RGB(0, 0, 0);
         cv::circle(*show_img, current_center_point, 8, cv::Scalar(255, 0, 255), -1);
     }
     

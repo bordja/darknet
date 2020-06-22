@@ -2,7 +2,6 @@
 #include <fstream>
 #include <iostream>
 /*extern "C"*/ static std::ifstream stream;
-static int cnter = 0;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,8 +26,8 @@ extern "C" {
         return stream.eof();
     }
 
-    extern "C" void fstream_read(char* out, int size) {
-        stream.read(out, size);
+    extern "C" void fstream_read(unsigned char* out, int size) {
+        stream.read((char*)out, size);
         return;
     }
 #ifdef __cplusplus

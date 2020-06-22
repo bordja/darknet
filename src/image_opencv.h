@@ -10,9 +10,6 @@ extern "C" {
 
 #ifdef OPENCV
 
-extern int x_detection;
-extern int y_detection;
-
 // declaration
 typedef void* mat_cv;
 typedef void* cap_cv;
@@ -21,6 +18,15 @@ typedef void* write_cv;
 //typedef struct mat_cv mat_cv;
 //typedef struct cap_cv cap_cv;
 //typedef struct write_cv write_cv;
+
+typedef struct point_cv {
+    int x;
+    int y;
+} point_cv;
+
+extern int num_cars;
+extern point_cv car_detections[300];
+extern point_cv car_perspective_detections[300];
 
 // cv::Mat
 mat_cv *load_image_mat_cv(const char *filename, int flag);

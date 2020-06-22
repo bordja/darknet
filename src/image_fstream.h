@@ -8,7 +8,7 @@ extern "C" {
 void fstream_open(const char *filename);
 int fstream_is_open(void);
 int fstream_eof(void);
-void fstream_read(char* out, int size);
+void fstream_read(unsigned char* out, int size);
 
 #ifdef __cplusplus
 }

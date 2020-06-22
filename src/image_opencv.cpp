@@ -97,8 +97,8 @@ extern "C" {
 //    cv::Mat ipl_to_mat(IplImage *ipl);
 //    IplImage *mat_to_ipl(cv::Mat mat);
 
-int x_detection;
-int y_detection;
+int num_cars;
+point_cv car_detections[300];
 
 extern "C" mat_cv *load_image_mat_cv(const char *filename, int flag)
 {
@@ -1035,6 +1035,7 @@ extern "C" void draw_detections_cv_v3(mat_cv* mat, detection *dets, int num, flo
 // ====================================================================
 extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
 {
+    num_cars = 0;
     static bool begin = true;
     static cv::Point current_top_left;
     static cv::Point current_bottom_right;
@@ -1057,8 +1058,8 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
     frame_id++;
 
     char labelstr[4096] = { 0 };
-    threshold_value.x = 20;
-    threshold_value.y = 20;
+    threshold_value.x = 60;
+    threshold_value.y = 60;
     
     for (i = 0; i < num; ++i) {
         for (int l = 0; l < strlen(labelstr); ++l)
@@ -1073,12 +1074,12 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
                     char buff[10];
                     sprintf(buff, " (%2.0f%%)", dets[i].prob[j] * 100);
                     strcat(labelstr, buff);
-                    printf("%s: %.0f%% ", names[j], dets[i].prob[j] * 100);
+                    //printf("%s: %.0f%% ", names[j], dets[i].prob[j] * 100);
                 }
                 else {
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
-                    printf(", %s: %.0f%% ", names[j], dets[i].prob[j] * 100);
+                    //printf(", %s: %.0f%% ", names[j], dets[i].prob[j] * 100);
                 }
             }
         }
@@ -1131,54 +1132,47 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
             color.val[1] = green * 256;
             color.val[2] = blue * 256;
 
-            if (begin)
-            {
-                if (++car_number == 16)
-                    begin = false;
-                else
-                    continue;
-                current_top_left.x = pt1.x;
-                current_top_left.y = pt1.y;
-                current_bottom_right.x = pt2.x;
-                current_bottom_right.y = pt2.y;
-                current_center_point.x = (pt1.x + pt2.x) / 2;
-                current_center_point.y = (pt1.y + pt2.y) / 2;
-            }
+            //     out_num_cars++;
+            //     continue;
+            // }
 
             cv::Point center_point;
             center_point.x = (pt1.x + pt2.x) / 2;
             center_point.y = (pt1.y + pt2.y) / 2;
 
-            if (abs(center_point.x - current_center_point.x) <= threshold_value.x &&
-                abs(center_point.y - current_center_point.y) <= threshold_value.y)
-            {
-                current_top_left.x = pt1.x;
-                current_top_left.y = pt1.y;
-                current_bottom_right.x = pt2.x;
-                current_bottom_right.y = pt2.y;
-                current_center_point.x = center_point.x;
-                current_center_point.y = center_point.y;
-                break;
-            }
+            car_detections[num_cars].x = center_point.x;
+            car_detections[num_cars].y = center_point.y;
         }
+        num_cars++;
     }
 
+    // if (begin)
+    // {
+    //     in_num_cars = out_num_cars;
+    //     begin = false;
+    //     return;
+    // }
+
     //cv::rectangle(*show_img, current_top_left, current_bottom_right, color, width, 8, 0);
-    printf("pt1 = (%d,%d), pt2 = (%d,%d)\n\n", current_top_left.x, current_top_left.y, current_bottom_right.x, current_bottom_right.y);
     //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, width, 8, 0);
     //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, CV_FILLED, 8, 0);    // filled
-    printf("width -> %d, height -> %d\n", show_img->cols, show_img->rows);
-    if ((current_center_point.x - end_offset >= 0) &&
-        (current_center_point.x + end_offset < show_img->cols) &&
-        (current_center_point.y - end_offset >= 0) &&
-        (current_center_point.y + end_offset < show_img->rows))
+    //printf("width -> %d, height -> %d\n", show_img->cols, show_img->rows);
+    for (int i  = 0; i < num_cars; i++)
     {
-        x_detection = current_center_point.x;
-        y_detection = current_center_point.y;
-        //cv::Scalar black_color = CV_RGB(0, 0, 0);
-        cv::circle(*show_img, current_center_point, 8, cv::Scalar(255, 0, 255), -1);
+        if ((car_detections[i].x - end_offset >= 0) &&
+            (car_detections[i].x + end_offset < show_img->cols) &&
+            (car_detections[i].y - end_offset >= 0) &&
+            (car_detections[i].y + end_offset < show_img->rows))
+        {
+            cv::Point center_point;
+            center_point.x = car_detections[i].x;
+            center_point.y = car_detections[i].y;
+
+            cv::circle(*show_img, center_point, 8, cv::Scalar(255, 0, 255), -1);
+        }
+        //in_car_detections[i] = out_car_detections[i];
     }
-    
+    //in_num_cars = out_num_cars;
     //cv::putText(*show_img, labelstr, pt_text, cv::FONT_HERSHEY_COMPLEX_SMALL, font_size, black_color, 2 * font_size, CV_AA);
 }
 

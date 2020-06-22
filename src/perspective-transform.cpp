@@ -267,27 +267,34 @@ extern "C" void cv_copy_to_input_perspective(void* input)
     input_perspective = *(cv::Mat*)input;
 }
 
-extern "C" void pixel_perspective_transform(void* perspective_img, int x, int y, int* x_new, int* y_new)
+extern "C" void cv_copy_from_output_perspective(void* output)
 {
-    cv::Mat* perspective_image = (cv::Mat*)perspective_img;
+    *(cv::Mat*)output = result_finetune;
+}
+
+extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new)
+{
     cv::Point2f input(x,y);
+    cv::Point2f warp;
+    cv::Point2f inverse;
+    cv::Point2f finetune;
 
     /* I -> Warp perspective */
     cv::Mat warpMatrix = cv::getPerspectiveTransform(coordinates, dst_warp);
-    perspective_transform_element_wise(input, input, warpMatrix);
+    perspective_transform_element_wise(input, warp, warpMatrix);
 
     /* II -> Inverse perspective */
     IPM ipm(cv::Size(WIDTH, HEIGHT), cv::Size(WIDTH, HEIGHT), src_inverse, dst_inverse);
-    perspective_transform_element_wise(input, input, ipm.getH());
+    perspective_transform_element_wise(warp, inverse, ipm.getH());
 
     /* III -> Finetune perspective */
     IPM ipm_finetune(cv::Size(WIDTH, HEIGHT), cv::Size(WIDTH, HEIGHT), src_finetune, dst_finetune);
-    perspective_transform_element_wise(input, input, ipm_finetune.getH());
+    perspective_transform_element_wise(inverse, finetune, ipm_finetune.getH());
 
-    *x_new = input.x;
-    *y_new = input.y;
+    *x_new = finetune.x;
+    *y_new = finetune.y;
 
-    cv::circle(*perspective_image, input, 8, cv::Scalar(255, 0, 255), -1);
+    cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
 }
 
 extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_window_name)
@@ -407,18 +414,15 @@ extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_
         }
     }
     for (int i = 0; i < mouse_move_cnt; i++)
-        circle(*opencv_bgr_frame, coordinates[i], 5, cv::Scalar(0, 0, 255), -1);
+        circle(*opencv_bgr_frame, coordinates[i], 16, cv::Scalar(0, 0, 255), -1);
     cv::imshow(cv_window_name, *opencv_bgr_frame);
     cv::waitKey(1);
 
     return clickEventFinished;
 }
 
-extern "C" void get_perspective_transform(void* perspective_img)
+extern "C" void get_perspective_transform(void)
 {
-    cv::Mat* perspective_transform = (cv::Mat*)perspective_img;
-    *perspective_transform = input_perspective;
-
     cv::Mat warpMatrix = cv::getPerspectiveTransform(coordinates, dst_warp);
     if (!defined_warp_pole)
     {
@@ -471,8 +475,6 @@ extern "C" void get_perspective_transform(void* perspective_img)
     ipm.drawPoints(dst_finetune_next_rect_1, result_finetune, cv::Scalar(255,0,0));
     ipm.drawPoints(dst_finetune_next_rect_2, result_finetune, cv::Scalar(0,0,255));
     ipm.drawPoints(dst_finetune_next_rect_3, result_finetune, cv::Scalar(120,120,120));
-
-    *perspective_transform = result_finetune;
 }
 #ifdef __cplusplus
 }

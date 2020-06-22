@@ -10,7 +10,7 @@
 #include "darknet.h"
 #include "option_list.h"
 #include "fullHD_input.h"
-#include <stdbool.h>
+#include "perspective-transform.h"
 
 #ifdef WIN32
 #include <time.h>
@@ -19,7 +19,7 @@
 #include <sys/time.h>
 #endif
 
-#define TRESH (0.25F)
+#define TRESH (0.6F)
 #define NFRAMES 3
 #define WIDTH 1920
 #define HEIGHT 1080
@@ -46,16 +46,15 @@ static detection *dets = NULL;
 static float *avg;
 static volatile int flag_exit;
 static long long int frame_id = 0;
-static float fps = 0;
-int frame_skip = 0;
+int frame_skip = 30;
 mat_cv* in_img;
 mat_cv* det_img;
 mat_cv* show_img;
 mat_cv* perspective_img;
 
+point_cv car_perspective_detections[300];
 //std::ifstream yuv_stream;
 
-static cap_cv *cap;
 static const int thread_wait_ms = 1;
 static volatile int run_fetch_in_thread_fullHD = 0;
 static volatile int run_detect_in_thread_fullHD = 0;
@@ -68,10 +67,7 @@ void *detect_in_thread_sync_fullHD(void *ptr);
 double get_wall_time_fullHD();
 
 unsigned char uyvy_frame[FRAME_SIZE_UYVY];
-static int cnter = 0;
 void fullHD_input(int argc, char **argv)
-
-
 {
     char *datacfg = argv[2];
     char *cfg = argv[3];
@@ -153,18 +149,13 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
         int full_screen = 0;
         create_window_cv("FullHD", full_screen, WIDTH, HEIGHT);
 
-        int send_http_post_once = 0;
-        const double start_time_lim = get_time_point();
-        double before = get_time_point();
-        double start_time = get_time_point();
         float avg_fps = 0;
-        int frame_counter = 0;
         bool finished_clicking = false;
         bool window_created = false;
-        int x_new, y_new;
 
         while (!fstream_eof()) {
             ++count;
+            if (count % frame_skip == 1)
             {
                 const float nms = .45;    // 0.4F
                 int local_nboxes = nboxes;
@@ -180,22 +171,16 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                     else diounms_sort(local_dets, local_nboxes, l.classes, nms, l.nms_kind, l.beta_nms);
                 }
 
-                //printf("\033[2J");
-                //printf("\033[1;1H");
-                //printf("\nFPS:%.1f\n", fps);
-                printf("Objects:\n\n");
-
                 ++frame_id;
                 if (det_img != NULL)
                     cv_copy_to_input_perspective((void*)det_img);
-                // draw_detections_cv_v3(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes, 0/*demo_ext_output*/);
-                // draw_detections_cv_v3(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, 1, 0/*demo_ext_output*/);
                 draw_detection_and_point(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes);
 
                 if (!finished_clicking && show_img != NULL)
                     finished_clicking = mouse_click_and_param_init((void*)show_img, "FullHD");
                 else if (show_img != NULL)
                 {
+
                     show_image_mat(show_img, "FullHD");
                     perspective_img = show_img;
                     if (!window_created)
@@ -203,14 +188,21 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                         create_window_cv("Perspective transform", full_screen, WIDTH, HEIGHT);
                         window_created = true;
                     }
-                    get_perspective_transform((void*)perspective_img);
-                    pixel_perspective_transform((void*)perspective_img, x_detection, y_detection, &x_new, &y_new);
+                    get_perspective_transform();
+                    for (int dets = 0; dets < num_cars; dets++)
+                    {
+                        pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
+                            &car_perspective_detections[dets].x, &car_perspective_detections[dets].y);
+                    }
+                    cv_copy_from_output_perspective((void*)perspective_img);
                     show_image_mat(perspective_img, "Perspective transform");
                 }
-
+                for (int dets = 0; dets < num_cars; dets++)
+                {
+                    car_detections[dets].x = 0;
+                    car_detections[dets].y = 0;
+                }
                 free_detections(local_dets, local_nboxes);
-
-                printf("\nFPS:%.1f \t AVG_FPS:%.1f\n", fps, avg_fps);
 
                 int c = wait_key_cv(1);
                 if (c == 10) {
@@ -238,33 +230,13 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
 
                 if (flag_exit == 1) break;
 
-                if (delay == 0) {
-                    release_mat(&show_img);
-                    show_img = det_img;
-                }
+                release_mat(&show_img);
+                show_img = det_img;
+
                 det_img = in_img;
                 det_s = in_s;
             }
             --delay;
-            if (delay < 0) {
-                delay = frame_skip;
-
-                //double after = get_wall_time();
-                //float curr = 1./(after - before);
-                double after = get_time_point();    // more accurate time measurements
-                float curr = 1000000. / (after - before);
-                fps = fps * 0.9 + curr * 0.1;
-                before = after;
-
-                float spent_time = (get_time_point() - start_time) / 1000000;
-                frame_counter++;
-                if (spent_time >= 3.0f) {
-                    //printf(" spent_time = %f \n", spent_time);
-                    avg_fps = frame_counter / spent_time;
-                    frame_counter = 0;
-                    start_time = get_time_point();
-                }
-            }
         }
         printf("input video stream closed. \n");
 
@@ -311,7 +283,6 @@ void *fetch_in_thread_fullHD(void *ptr)
             if (custom_atomic_load_int(&flag_exit)) return 0;
             this_thread_yield();
         }
-        int dont_close_stream = 0;    // set 1 if your IP-camera periodically turns off and turns on video-stream
         
         fstream_read(uyvy_frame, FRAME_SIZE_UYVY);
         //cv::Mat yuv_frame(HEIGHT, WIDTH, CV_8UC2, uyvy_frame);

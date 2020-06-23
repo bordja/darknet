@@ -1,5 +1,6 @@
 #include "IPM.h"
 #include "mouse-event.h"
+#include "perspective-transform.h"
 
 #define WIDTH               1920
 #define HEIGHT              1080
@@ -272,7 +273,7 @@ extern "C" void cv_copy_from_output_perspective(void* output)
     *(cv::Mat*)output = result_finetune;
 }
 
-extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new)
+extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new, cv_Color color)
 {
     cv::Point2f input(x,y);
     cv::Point2f warp;
@@ -294,7 +295,10 @@ extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new
     *x_new = finetune.x;
     *y_new = finetune.y;
 
-    cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
+    if (color == PURPLE)
+        cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
+    else if (color == LIGHT_BLUE)
+        cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 255, 0), -1);
 }
 
 extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_window_name)

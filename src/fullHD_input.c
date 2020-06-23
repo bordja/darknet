@@ -46,13 +46,14 @@ static detection *dets = NULL;
 static float *avg;
 static volatile int flag_exit;
 static long long int frame_id = 0;
-int frame_skip = 30;
+int frame_skip = 40;
 mat_cv* in_img;
 mat_cv* det_img;
 mat_cv* show_img;
 mat_cv* perspective_img;
 
 point_cv car_perspective_detections[300];
+point_cv person_perspective_detections[300];
 //std::ifstream yuv_stream;
 
 static const int thread_wait_ms = 1;
@@ -189,10 +190,17 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                         window_created = true;
                     }
                     get_perspective_transform();
+                    cv_Color color = PURPLE;
                     for (int dets = 0; dets < num_cars; dets++)
                     {
                         pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
-                            &car_perspective_detections[dets].x, &car_perspective_detections[dets].y);
+                            &car_perspective_detections[dets].x, &car_perspective_detections[dets].y, color);
+                    }
+                    color = LIGHT_BLUE;
+                    for (int dets = 0; dets < num_persons; dets++)
+                    {
+                        pixel_perspective_transform(person_detections[dets].x, person_detections[dets].y,
+                            &person_perspective_detections[dets].x, &person_perspective_detections[dets].y, color);
                     }
                     cv_copy_from_output_perspective((void*)perspective_img);
                     show_image_mat(perspective_img, "Perspective transform");
@@ -201,6 +209,11 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                 {
                     car_detections[dets].x = 0;
                     car_detections[dets].y = 0;
+                }
+                for (int dets = 0; dets < num_persons; dets++)
+                {
+                    person_detections[dets].x = 0;
+                    person_detections[dets].y = 0;
                 }
                 free_detections(local_dets, local_nboxes);
 

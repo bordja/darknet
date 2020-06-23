@@ -98,7 +98,12 @@ extern "C" {
 //    IplImage *mat_to_ipl(cv::Mat mat);
 
 int num_cars;
+int car_ID = 2;
 point_cv car_detections[300];
+
+int num_persons;
+int person_ID = 0;
+point_cv person_detections[300];
 
 extern "C" mat_cv *load_image_mat_cv(const char *filename, int flag)
 {
@@ -1036,6 +1041,7 @@ extern "C" void draw_detections_cv_v3(mat_cv* mat, detection *dets, int num, flo
 extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, float thresh, char **names, image **alphabet, int classes)
 {
     num_cars = 0;
+    num_persons = 0;
     static bool begin = true;
     static cv::Point current_top_left;
     static cv::Point current_bottom_right;
@@ -1050,7 +1056,6 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
     cv::Scalar color;
     int width;
 
-    int classID_required = 2;
     cv::Mat *show_img = (cv::Mat*)mat;
     int i, j;
     if (!show_img) return;
@@ -1083,7 +1088,8 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
                 }
             }
         }
-        if (class_id == classID_required) {
+        if (class_id == car_ID ||
+            class_id == person_ID) {
             width = std::max(1.0f, show_img->rows * .002f);
             int offset = class_id * 123457 % classes;
             float red = get_color(2, offset, classes);
@@ -1140,10 +1146,22 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
             center_point.x = (pt1.x + pt2.x) / 2;
             center_point.y = (pt1.y + pt2.y) / 2;
 
-            car_detections[num_cars].x = center_point.x;
-            car_detections[num_cars].y = center_point.y;
+            if (class_id == car_ID)
+            {
+                car_detections[num_cars].x = center_point.x;
+                car_detections[num_cars].y = center_point.y;
+            }
+            else if (class_id == person_ID)
+            {
+                person_detections[num_persons].x = center_point.x;
+                person_detections[num_persons].y = center_point.y;
+
+            }
         }
-        num_cars++;
+        if (class_id == car_ID)
+            num_cars++;
+        else if (class_id == person_ID)
+            num_persons++;
     }
 
     // if (begin)
@@ -1169,6 +1187,20 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
             center_point.y = car_detections[i].y;
 
             cv::circle(*show_img, center_point, 8, cv::Scalar(255, 0, 255), -1);
+        }
+    }
+    for (int j = 0; j < num_persons; j++)
+    {
+        if ((person_detections[j].x - end_offset >= 0) &&
+            (person_detections[j].x + end_offset < show_img->cols) &&
+            (person_detections[j].y - end_offset >= 0) &&
+            (person_detections[j].y + end_offset < show_img->rows))
+        {
+            cv::Point center_point;
+            center_point.x = person_detections[j].x;
+            center_point.y = person_detections[j].y;
+
+            cv::circle(*show_img, center_point, 8, cv::Scalar(255, 255, 0), -1);
         }
         //in_car_detections[i] = out_car_detections[i];
     }

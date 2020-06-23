@@ -28,6 +28,10 @@ extern int num_cars;
 extern point_cv car_detections[300];
 extern point_cv car_perspective_detections[300];
 
+extern int num_persons;
+extern point_cv person_detections[300];
+extern point_cv person_perspective_detections[300];
+
 // cv::Mat
 mat_cv *load_image_mat_cv(const char *filename, int flag);
 image load_image_cv(char *filename, int channels);

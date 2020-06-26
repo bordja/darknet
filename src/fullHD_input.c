@@ -11,6 +11,8 @@
 #include "option_list.h"
 #include "fullHD_input.h"
 #include "perspective-transform.h"
+#include "tcp-ip-client.h"
+#include <unistd.h>
 
 #ifdef WIN32
 #include <time.h>
@@ -104,6 +106,20 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
     fuse_conv_batchnorm(net);
     calculate_binary_weights(net);
     srand(2222222);
+
+    if (tcp_init_client() != 0)
+    {
+        printf("Connect client failed.\n");
+        return;
+    }
+
+    int numbers = 0;
+    while (true)
+    {
+        printf("SOCK_WRITE: %d\n", ++numbers);
+        write(sockfd, &numbers, sizeof(numbers));
+        sleep(1);
+    }
 
     //yuv_stream.open(filename, std::ios_base::binary);
     fstream_open(filename);
@@ -261,6 +277,7 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
         // free memory
         free_image(in_s);
         free_detections(dets, nboxes);
+        tcp_deinit_client();
 
         free(avg);
         for (j = 0; j < NFRAMES; ++j) free(predictions[j]);

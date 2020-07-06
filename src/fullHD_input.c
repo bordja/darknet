@@ -62,7 +62,7 @@ static const int thread_wait_ms = 1;
 static volatile int run_fetch_in_thread_fullHD = 0;
 static volatile int run_detect_in_thread_fullHD = 0;
 
-void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filename, char **names, int classes);
+void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filename, char **names, int classes, const char* out_filename);
 void *fetch_in_thread_fullHD(void *ptr);
 void *fetch_in_thread_sync_fullHD(void *ptr);
 void *detect_in_thread_fullHD(void *ptr);
@@ -82,11 +82,12 @@ void fullHD_input(int argc, char **argv)
     char **names = get_labels(name_list);
     //const char* filename = "E:/darknet/data/frames0.yuv";
     const char* filename = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-05-21/SSD-1/Out2.yuv";
+    const char* out_filename = "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/perspective_out_1";
 
-    run_fullHD(cfg, weights, TRESH, filename, names, classes);
+    run_fullHD(cfg, weights, TRESH, filename, names, classes, out_filename);
 }
 
-void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filename, char **names, int classes) {
+void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filename, char **names, int classes, const char* out_filename) {
 
     in_img = det_img = show_img = perspective_img = NULL;
 
@@ -107,24 +108,11 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
     calculate_binary_weights(net);
     srand(2222222);
 
-    if (tcp_init_client() != 0)
-    {
-        printf("Connect client failed.\n");
-        return;
-    }
-
-    int numbers = 0;
-    while (true)
-    {
-        printf("SOCK_WRITE: %d\n", ++numbers);
-        write(sockfd, &numbers, sizeof(numbers));
-        sleep(1);
-    }
-
     //yuv_stream.open(filename, std::ios_base::binary);
-    fstream_open(filename);
+    fstream_open(filename, INPUT);
+    fstream_open(out_filename, OUTPUT);
     
-    if (fstream_is_open())
+    if (fstream_is_open(INPUT))
     {
         layer l = net.layers[net.n - 1];
         int j;
@@ -166,9 +154,45 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
         int full_screen = 0;
         create_window_cv("FullHD", full_screen, WIDTH, HEIGHT);
 
+        write_cv* perspective_out = NULL;
+        write_cv* perspective_out_cmpr = NULL;
+        perspective_out = create_video_writer("/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/perspective_out_1.mp4",
+            'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
+        perspective_out_cmpr = create_video_writer("/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/perspective_out_cmpr_1.mp4",
+            'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
+
         float avg_fps = 0;
         bool finished_clicking = false;
         bool window_created = false;
+
+        /**
+         * - Ouput file format:
+         * 
+         *  [0]                 -> Camera ID (1B)
+         *  [1:2]               -> POLE_1_ID (2B)
+         *  [3:4]               -> POLE_2_ID (2B)
+         *  [5:6]               -> POLE_3_ID (2B)
+         *  [7:8]               -> POLE_4_ID (2B)
+         *  [9:10]              -> Persons (2B)
+         *  [11]                -> x0 (2B)
+         *  [12]                -> y0 (2B)
+         *              ...
+         * 
+         *  [(11+P):(11+P+1)]   -> Cars (2B)
+         *  [(11+P+2)]          -> x0 (2B)
+         *  [(11+P+3)]          -> y0 (2B)
+         *              ...
+         */
+        uint8_t cameraID = 1;
+        fstream_write((char*)&cameraID, sizeof(cameraID));
+
+        int num_poles_init = (&pole_ids_init)[1] - pole_ids_init;
+        for (int i = 0; i < num_poles_init; i++)
+        {
+            printf("[%d] -- ", i+1);
+            uint32_t pole_id = (uint32_t)pole_ids_init[i];
+            fstream_write((char*)&pole_id, sizeof(pole_id));
+        }
 
         while (!fstream_eof()) {
             ++count;
@@ -206,19 +230,39 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                         window_created = true;
                     }
                     get_perspective_transform();
-                    cv_Color color = PURPLE;
-                    for (int dets = 0; dets < num_cars; dets++)
-                    {
-                        pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
-                            &car_perspective_detections[dets].x, &car_perspective_detections[dets].y, color);
-                    }
-                    color = LIGHT_BLUE;
+                    cv_copy_from_output_perspective((void*)perspective_img);
+                    write_frame_cv(perspective_out, perspective_img);
+
+                    uint16_t Persons = (uint16_t)num_persons;
+                    fstream_write((char*)&Persons, sizeof(Persons));
+                    cv_Color color = LIGHT_BLUE;
                     for (int dets = 0; dets < num_persons; dets++)
                     {
                         pixel_perspective_transform(person_detections[dets].x, person_detections[dets].y,
                             &person_perspective_detections[dets].x, &person_perspective_detections[dets].y, color);
+
+                        uint32_t person_det_x = (uint32_t)person_perspective_detections[dets].x;
+                        fstream_write((char*)&person_det_x, sizeof(person_det_x));
+
+                        uint32_t person_det_y = (uint32_t)person_perspective_detections[dets].y;
+                        fstream_write((char*)&person_det_y, sizeof(person_det_y));
                     }
-                    cv_copy_from_output_perspective((void*)perspective_img);
+
+                    uint16_t Cars = (uint16_t)num_cars;
+                    fstream_write((char*)&Cars, sizeof(Cars));
+                    color = PURPLE;
+                    for (int dets = 0; dets < num_cars; dets++)
+                    {
+                        pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
+                            &car_perspective_detections[dets].x, &car_perspective_detections[dets].y, color);
+
+                        uint32_t car_det_x = (uint32_t)car_perspective_detections[dets].x;
+                        fstream_write((char*)&car_det_x, sizeof(car_det_x));
+
+                        uint32_t car_det_y = (uint32_t)car_perspective_detections[dets].y;
+                        fstream_write((char*)&car_det_y, sizeof(car_det_y));
+                    }
+                    write_frame_cv(perspective_out_cmpr, perspective_img);
                     show_image_mat(perspective_img, "Perspective transform");
                 }
                 for (int dets = 0; dets < num_cars; dets++)
@@ -243,6 +287,8 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                 else if (c == 27 || c == 1048603) // ESC - exit (OpenCV 2.x / 3.x)
                 {
                     flag_exit = 1;
+                    release_video_writer(&perspective_out);
+                    release_video_writer(&perspective_out_cmpr);
                 }
 
 
@@ -267,7 +313,10 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
             }
             --delay;
         }
-        printf("input video stream closed. \n");
+        printf("\ninput video stream closed. \n");
+        fstream_close(INPUT);
+        printf("output perspective detctions file closed. \n");
+        fstream_close(OUTPUT);
 
         this_thread_sleep_for(thread_wait_ms);
 
@@ -277,7 +326,7 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
         // free memory
         free_image(in_s);
         free_detections(dets, nboxes);
-        tcp_deinit_client();
+        // tcp_deinit_client();
 
         free(avg);
         for (j = 0; j < NFRAMES; ++j) free(predictions[j]);

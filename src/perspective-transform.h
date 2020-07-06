@@ -7,11 +7,18 @@
 extern "C" {
 #endif
 
+#define POLE_1_ID           3284453
+#define POLE_2_ID           3284225
+#define POLE_3_ID           3284454
+#define POLE_4_ID           3284224
+
 typedef enum cv_Color
 {
     PURPLE,
     LIGHT_BLUE
 }cv_Color;
+
+extern int pole_ids_init[4];
 
 void cv_copy_to_input_perspective(void* input);
 void cv_copy_from_output_perspective(void* output);

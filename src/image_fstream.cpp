@@ -4,6 +4,7 @@
 
 /*extern "C"*/ static std::ifstream in_stream;
 /*extern "C"*/ static std::ofstream out_stream;
+/*extern "C"*/ static std::ifstream timestamps;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -29,6 +30,16 @@ extern "C" {
                 std::cout << "Can not open output stream" << std::endl;
             }
         }
+        else if (mode == TIMESTAMPS) {
+            std::cout << "Opening timestamp stream " <<filename<< std::endl;
+            timestamps.open(filename, std::ios_base::binary);
+            if (timestamps.is_open()) {
+                std::cout << "Timestamp stream open" << std::endl;
+            }
+            else {
+                std::cout << "Can not open timestamp stream" << std::endl;
+            }
+        }
         else {
             std::cout << "Invalid mode for file stream" << std::endl;
             exit(-1);
@@ -41,18 +52,26 @@ extern "C" {
             return in_stream.is_open();
         else if (mode == OUTPUT)
             return out_stream.is_open();
+        else if (mode == TIMESTAMPS)
+            return timestamps.is_open();
         else {
             std::cout << "Invalid mode for file stream" << std::endl;
             exit(-1);
         }
     }
 
-    extern "C" int fstream_eof() {
-        return in_stream.eof();
+    extern "C" int fstream_eof(int mode) {
+        if (mode == INPUT)
+            return in_stream.eof();
+        else if (mode == TIMESTAMPS)
+            return timestamps.eof();
     }
 
-    extern "C" void fstream_read(unsigned char* out, int size) {
-        in_stream.read((char*)out, size);
+    extern "C" void fstream_read(unsigned char* out, int size, int mode) {
+        if (mode == INPUT)
+            in_stream.read((char*)out, size);
+        else if (mode == TIMESTAMPS)
+            timestamps.read((char*)out, size);
         return;
     }
 
@@ -66,6 +85,8 @@ extern "C" {
             in_stream.close();
         else if (mode == OUTPUT)
             out_stream.close();
+        else if (mode == TIMESTAMPS)
+            timestamps.close();
         else {
             std::cout << "Invalid mode for file stream" << std::endl;
             exit(-1);

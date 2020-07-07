@@ -71,7 +71,7 @@ void *detect_in_thread_fullHD(void *ptr);
 void *detect_in_thread_sync_fullHD(void *ptr);
 double get_wall_time_fullHD();
 
-#define OUTPUT_PERSPECTIVE_PATH "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/perspective_out"
+#define OUTPUT_PERSPECTIVE_PATH "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/perspective_out_"
 #define MAX_PATH_LENGTH 512
 
 unsigned char uyvy_frame[FRAME_SIZE_UYVY];
@@ -86,47 +86,47 @@ void fullHD_input(int argc, char **argv)
     char *name_list = option_find_str(options, "names", "data/names.list");
     char **names = get_labels(name_list);
 
-    /*
-     * - Ouput perspective format:
-     * 
-     *  [0]                    -> Camera ID (1B)          --
-     *  [1:4]                  -> POLE_1_ID (4B)           |
-     *  [5:8]                  -> POLE_2_ID (4B)           |- Camera/Stream Info
-     *  [9:12]                 -> POLE_3_ID (4B)           |
-     *  [13:16]                -> POLE_4_ID (4B)          --
-     *
-     *  [17:24]                -> Frame_0_Timestamp (8B)  --
-     *  [25:26]                -> PersonNumber (2B)        |
-     *  [17:28]                -> x0 (2B)                  |
-     *  [29:30]                -> y0 (2B)                  |
-     *  [31:32]                -> x1 (2B)                  |
-     *  [33:34]                -> y1 (2B)                  |
-     *              ...                                    |
-     *                                                     |- Frame_0 Info
-     *  [(25+2P):(25+2P+1)]    -> CarNumer (2B)            |
-     *  [(25+2P+2):(25+2P+3)]  -> x0 (2B)                  |
-     *  [(25+2P+4):(25+2P+5)]  -> y0 (2B)                  |
-     *  [(25+2P+6):(25+2P+7)]  -> x1 (2B)                  |
-     *  [(25+2P+8):(25+2P+9)]  -> y1 (2B)                  |
-     *              ...                                    |
-     *                                                    --
-     *              ...
-     */
-
-    fstream_open(OUTPUT_PERSPECTIVE_PATH, OUTPUT);
-    if (!fstream_is_open(OUTPUT))
-    {
-        printf("Failed to open file: %s\n", OUTPUT_PERSPECTIVE_PATH);
-        return;
-    }
-
     /* Camera 1 - Yolov4 */
-    const int8_t cameraID = 1;
-    const char* in_filename = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-1/Out1.yuv";
-    const char* in_timestamps = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-1/timestamp_1";
-    run_fullHD(cfg, weights, TRESH, names, classes, cameraID, in_filename, in_timestamps);
+    pole_ids_init[0] = CAMERA_1_POLE_1_ID;
+    pole_ids_init[1] = CAMERA_1_POLE_2_ID;
+    pole_ids_init[2] = CAMERA_1_POLE_3_ID;
+    pole_ids_init[3] = CAMERA_1_POLE_4_ID;
+    const int8_t cameraID_1 = 1;
+    const char* in_filename_1 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-1/Out1.yuv";
+    const char* in_timestamps_1 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-1/timestamp_1";
+    run_fullHD(cfg, weights, TRESH, names, classes, cameraID_1, in_filename_1, in_timestamps_1);
 
-    fstream_close(OUTPUT);
+    /* Camera 2 - Yolov4 */
+    pole_ids_init[0] = CAMERA_2_POLE_1_ID;
+    pole_ids_init[1] = CAMERA_2_POLE_2_ID;
+    pole_ids_init[2] = CAMERA_2_POLE_3_ID;
+    pole_ids_init[3] = CAMERA_2_POLE_4_ID;
+    const int8_t cameraID_2 = 2;
+    const char* in_filename_2 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-1/Out2.yuv";
+    const char* in_timestamps_2 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-1/timestamp_2";
+    run_fullHD(cfg, weights, TRESH, names, classes, cameraID_2, in_filename_2, in_timestamps_2);
+
+    /* Camera 3 - Yolov4 */
+    pole_ids_init[0] = CAMERA_3_POLE_1_ID;
+    pole_ids_init[1] = CAMERA_3_POLE_2_ID;
+    pole_ids_init[2] = CAMERA_3_POLE_3_ID;
+    pole_ids_init[3] = CAMERA_3_POLE_4_ID;
+    const int8_t cameraID_3 = 3;
+    const char* in_filename_3 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-2/Out1.yuv";
+    const char* in_timestamps_3 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-2/timestamp_1";
+    run_fullHD(cfg, weights, TRESH, names, classes, cameraID_3, in_filename_3, in_timestamps_3);
+
+    /* Camera 4 - Yolov4 */
+    pole_ids_init[0] = CAMERA_4_POLE_1_ID;
+    pole_ids_init[1] = CAMERA_4_POLE_2_ID;
+    pole_ids_init[2] = CAMERA_4_POLE_3_ID;
+    pole_ids_init[3] = CAMERA_4_POLE_4_ID;
+    const int8_t cameraID_4 = 4;
+    const char* in_filename_4 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-2/Out2.yuv";
+    const char* in_timestamps_4 = "/home/rtrk/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-07-02/DFG-2/timestamp_2";
+    run_fullHD(cfg, weights, TRESH, names, classes, cameraID_4, in_filename_4, in_timestamps_4);
+
+    free_ptrs((void **)names, net.layers[net.n - 1].classes);
 }
 
 void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int classes,
@@ -197,16 +197,51 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
         int full_screen = 0;
         create_window_cv("FullHD", full_screen, WIDTH, HEIGHT);
 
+        /*
+         * - Ouput perspective format:
+         * 
+         *  [0]                    -> Camera ID (1B)          --
+         *  [1:4]                  -> POLE_1_ID (4B)           |
+         *  [5:8]                  -> POLE_2_ID (4B)           |- Camera/Stream Info
+         *  [9:12]                 -> POLE_3_ID (4B)           |
+         *  [13:16]                -> POLE_4_ID (4B)          --
+         *
+         *  [17:24]                -> Frame_0_Timestamp (8B)  --
+         *  [25:26]                -> PersonNumber (2B)        |
+         *  [17:28]                -> x0 (2B)                  |
+         *  [29:30]                -> y0 (2B)                  |
+         *  [31:32]                -> x1 (2B)                  |
+         *  [33:34]                -> y1 (2B)                  |
+         *              ...                                    |
+         *                                                     |- Frame_0 Info
+         *  [(25+2P):(25+2P+1)]    -> CarNumer (2B)            |
+         *  [(25+2P+2):(25+2P+3)]  -> x0 (2B)                  |
+         *  [(25+2P+4):(25+2P+5)]  -> y0 (2B)                  |
+         *  [(25+2P+6):(25+2P+7)]  -> x1 (2B)                  |
+         *  [(25+2P+8):(25+2P+9)]  -> y1 (2B)                  |
+         *              ...                                    |
+         *                                                    --
+         *              ...
+         */
+        const char* out_perspective[MAX_PATH_LENGTH];
+        snprintf(out_perspective, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d", cameraID);
+        fstream_open(out_perspective, OUTPUT);
+        if (!fstream_is_open(OUTPUT))
+        {
+            printf("Failed to open file: %s\n", out_perspective);
+            return;
+        }
+
         /* Opening output video (without detections) */
         write_cv* perspective_out_video = NULL;
         const char* out_video_path[MAX_PATH_LENGTH];
-        snprintf(out_video_path, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "_%d.mp4", cameraID);
+        snprintf(out_video_path, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d.mp4", cameraID);
         perspective_out_video = create_video_writer(out_video_path, 'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
 
         /* Opening output video (without detections) */
         write_cv* perspective_out_video_cmpr = NULL;
         const char* out_video_path_cmpr[MAX_PATH_LENGTH];
-        snprintf(out_video_path_cmpr, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "_%d_cmpr.mp4", cameraID);
+        snprintf(out_video_path_cmpr, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d_cmpr.mp4", cameraID);
         perspective_out_video_cmpr = create_video_writer(out_video_path_cmpr, 'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
 
         float avg_fps = 0;
@@ -241,6 +276,9 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                 }
 
                 ++frame_id;
+                uint64_t current_timestamp;
+                fstream_read((char*)&current_timestamp, sizeof(current_timestamp), TIMESTAMPS);
+
                 if (det_img != NULL)
                     cv_copy_to_input_perspective((void*)det_img);
                 draw_detection_and_point(show_img, local_dets, local_nboxes, demo_thresh, demo_names, demo_alphabet, demo_classes);
@@ -260,9 +298,6 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     cv_copy_from_output_perspective((void*)perspective_img);
                     write_frame_cv(perspective_out_video, perspective_img);
 
-                    uint64_t current_timestamp;
-                    fstream_read((char*)&current_timestamp, sizeof(current_timestamp), TIMESTAMPS);
-                    printf("current_timestamp = %lu\n", current_timestamp);
                     fstream_write((char*)&current_timestamp, sizeof(current_timestamp));
 
                     uint16_t Persons = (uint16_t)num_persons;
@@ -323,7 +358,6 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     release_video_writer(&perspective_out_video_cmpr);
                 }
 
-
                 while (custom_atomic_load_int(&run_detect_in_thread_fullHD)) {
                     if (avg_fps > 180) this_thread_yield();
                     else this_thread_sleep_for(thread_wait_ms);   // custom_join(detect_thread, 0);
@@ -368,8 +402,6 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
             release_mat(&cv_images[j]);
         }
 
-        free_ptrs((void **)names, net.layers[net.n - 1].classes);
-
         int i;
         const int nsize = 8;
         for (j = 0; j < nsize; ++j) {
@@ -382,6 +414,9 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
         free_network(net);
         //cudaProfilerStop();
         printf("Memory freed \n");
+
+        destroy_window_cv("Perspective transform");
+        deinit_perspective_params();
         return;
     }
 

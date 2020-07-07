@@ -16,9 +16,10 @@ extern "C" {
 #include <cmath>
 #include <opencv2/opencv.hpp>
 
-int pole_ids_init[4] = {POLE_1_ID, POLE_2_ID, POLE_3_ID, POLE_4_ID};
+int pole_ids_init[4] = {0};
 
 static cv::Mat input_perspective;
+static bool clickEventFinished = false;
 
 /* Params for I perspective transformation (Warp) */
 static cv::Mat result_warp;
@@ -275,6 +276,30 @@ extern "C" void cv_copy_from_output_perspective(void* output)
     *(cv::Mat*)output = result_finetune;
 }
 
+/* Use this functionality when switching to next video stream. */
+extern "C" void deinit_perspective_params(void)
+{
+    mouse_move_cnt = 0;
+    click_finished = false;
+    clickEventFinished = false;
+
+    for (int i = 0; i < NUM_KEY_POINTS; i++)
+        coordinates[i] = cv::Point(0,0);
+
+    defined_warp_pole = false;
+    defined_inverse_pole = false;
+    defined_finetune_pole = false;
+
+    src_inverse.clear();
+    dst_inverse.clear();
+    pole_locations_inverse.clear();
+    src_finetune.clear();
+    dst_finetune.clear();
+    dst_finetune_next_rect_1.clear();
+    dst_finetune_next_rect_2.clear();
+    dst_finetune_next_rect_3.clear();
+}
+
 extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new, cv_Color color)
 {
     cv::Point2f input(x,y);
@@ -306,9 +331,8 @@ extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new
 extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_window_name)
 {
     cv::Mat* opencv_bgr_frame = (cv::Mat*)init_bgr_frame;
-    static bool clickEventFinished = false;
-
     cv::namedWindow(cv_window_name, cv::WINDOW_AUTOSIZE);
+
     if (!clickEventFinished)
     {
         if(!click_finished)

@@ -392,6 +392,17 @@ extern "C" void destroy_all_windows_cv()
 }
 // ----------------------------------------
 
+extern "C" void destroy_window_cv(const char* window_name)
+{
+    try {
+        cv::destroyWindow(window_name);
+    }
+    catch (...) {
+        cerr << "OpenCV exception: destroy_window_cv \n";
+    }
+}
+// ----------------------------------------
+
 extern "C" int wait_key_cv(int delay)
 {
     try {
@@ -1065,7 +1076,7 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
     char labelstr[4096] = { 0 };
     threshold_value.x = 60;
     threshold_value.y = 60;
-    
+
     for (i = 0; i < num; ++i) {
         for (int l = 0; l < strlen(labelstr); ++l)
             labelstr[l] = 0;

@@ -309,8 +309,6 @@ extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_
     static bool clickEventFinished = false;
 
     cv::namedWindow(cv_window_name, cv::WINDOW_AUTOSIZE);
-
-    //int current_mouse_event = mouse_move_cnt;
     if (!clickEventFinished)
     {
         if(!click_finished)
@@ -426,25 +424,6 @@ extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_
         circle(*opencv_bgr_frame, coordinates[i], 16, cv::Scalar(0, 0, 255), -1);
     cv::imshow(cv_window_name, *opencv_bgr_frame);
     cv::waitKey(1);
-    // if (current_mouse_event < mouse_move_cnt)
-    // {
-    //     int pole_id;
-    //     //std::cout << "Enter Pole ID for coordinate " << mouse_move_cnt << ": ";
-    //     //std::cin >> pole_id;
-    //     pole_id = pole_ids_init[mouse_move_cnt-1];
-    //     int pole_array_size = *(&pole_array + 1) - pole_array;
-    //     //std::cout << "Array size = " << pole_array_size << std::endl;
-    //     for (int i = 0; i < pole_array_size; i++)
-    //     {
-    //         if (pole_array[i].ID == pole_id)
-    //         {
-    //             std::cout << "pole_array[i].ID = " << pole_array[i].ID << std::endl;
-    //             pole_array[i].x_rel = coordinates[mouse_move_cnt-1].x;
-    //             pole_array[i].y_rel = coordinates[mouse_move_cnt-1].y;
-    //             break;
-    //         }
-    //     }
-    // }
 
     return clickEventFinished;
 }
@@ -503,34 +482,6 @@ extern "C" void get_perspective_transform(void)
     ipm.drawPoints(dst_finetune_next_rect_1, result_finetune, cv::Scalar(255,0,0));
     ipm.drawPoints(dst_finetune_next_rect_2, result_finetune, cv::Scalar(0,0,255));
     ipm.drawPoints(dst_finetune_next_rect_3, result_finetune, cv::Scalar(120,120,120));
-
-    // for (int i = 0; i < NUM_POLE_LOCATIONS; i++)
-    // {
-    //     if (pole_array[i].ID == POLE_1_ID)
-    //     {
-    //         pole_array[i].x_rel = dst_finetune[3].x;
-    //         pole_array[i].y_rel = dst_finetune[3].y;
-    //         printf("(I) pole_array = (x = %d, y = %d\n", pole_array[i].x_rel, pole_array[i].y_rel);
-    //     }
-    //     else if (pole_array[i].ID == POLE_2_ID)
-    //     {
-    //         pole_array[i].x_rel = dst_finetune[2].x;
-    //         pole_array[i].y_rel = dst_finetune[2].y;
-    //         printf("(II) pole_array = (x = %d, y = %d\n", pole_array[i].x_rel, pole_array[i].y_rel);
-    //     }
-    //     else if (pole_array[i].ID == POLE_3_ID)
-    //     {
-    //         pole_array[i].x_rel = dst_finetune[0].x;
-    //         pole_array[i].y_rel = dst_finetune[0].y;
-    //         printf("(III) pole_array = (x = %d, y = %d\n", pole_array[i].x_rel, pole_array[i].y_rel);
-    //     }
-    //     else if (pole_array[i].ID == POLE_4_ID)
-    //     {
-    //         pole_array[i].x_rel = dst_finetune[1].x;
-    //         pole_array[i].y_rel = dst_finetune[1].y;
-    //         printf("(IV) pole_array = (x = %d, y = %d\n", pole_array[i].x_rel, pole_array[i].y_rel);
-    //     }
-    // }
 }
 #ifdef __cplusplus
 }

@@ -165,22 +165,27 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
         bool finished_clicking = false;
         bool window_created = false;
 
-        /**
+        /*
          * - Ouput file format:
          * 
-         *  [0]                 -> Camera ID (1B)
-         *  [1:2]               -> POLE_1_ID (2B)
-         *  [3:4]               -> POLE_2_ID (2B)
-         *  [5:6]               -> POLE_3_ID (2B)
-         *  [7:8]               -> POLE_4_ID (2B)
-         *  [9:10]              -> Persons (2B)
-         *  [11]                -> x0 (2B)
-         *  [12]                -> y0 (2B)
+         *  [0]                    -> Camera ID (1B)
+         *  [1:4]                  -> POLE_1_ID (4B)
+         *  [5:8]                  -> POLE_2_ID (4B)
+         *  [9:12]                 -> POLE_3_ID (4B)
+         *  [13:16]                -> POLE_4_ID (4B)
+
+         *  [17:18]                -> PersonsNumber (2B)
+         *  [19:20]                -> x0 (2B)
+         *  [21:22]                -> y0 (2B)
+         *  [23:24]                -> x1 (2B)
+         *  [25:26]                -> y1 (2B)
          *              ...
          * 
-         *  [(11+P):(11+P+1)]   -> Cars (2B)
-         *  [(11+P+2)]          -> x0 (2B)
-         *  [(11+P+3)]          -> y0 (2B)
+         *  [(17+2P):(17+2P+1)]    -> CarsNumer (2B)
+         *  [(17+2P+2):(17+2P+3)]  -> x0 (2B)
+         *  [(17+2P+4):(17+2P+5)]  -> y0 (2B)
+         *  [(17+2P+6):(17+2P+7)]  -> x1 (2B)
+         *  [(17+2P+8):(17+2P+9)]  -> y1 (2B)
          *              ...
          */
         uint8_t cameraID = 1;
@@ -241,10 +246,10 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                         pixel_perspective_transform(person_detections[dets].x, person_detections[dets].y,
                             &person_perspective_detections[dets].x, &person_perspective_detections[dets].y, color);
 
-                        uint32_t person_det_x = (uint32_t)person_perspective_detections[dets].x;
+                        uint16_t person_det_x = (uint16_t)person_perspective_detections[dets].x;
                         fstream_write((char*)&person_det_x, sizeof(person_det_x));
 
-                        uint32_t person_det_y = (uint32_t)person_perspective_detections[dets].y;
+                        uint16_t person_det_y = (uint16_t)person_perspective_detections[dets].y;
                         fstream_write((char*)&person_det_y, sizeof(person_det_y));
                     }
 
@@ -256,10 +261,10 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, const char *filen
                         pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
                             &car_perspective_detections[dets].x, &car_perspective_detections[dets].y, color);
 
-                        uint32_t car_det_x = (uint32_t)car_perspective_detections[dets].x;
+                        uint16_t car_det_x = (uint16_t)car_perspective_detections[dets].x;
                         fstream_write((char*)&car_det_x, sizeof(car_det_x));
 
-                        uint32_t car_det_y = (uint32_t)car_perspective_detections[dets].y;
+                        uint16_t car_det_y = (uint16_t)car_perspective_detections[dets].y;
                         fstream_write((char*)&car_det_y, sizeof(car_det_y));
                     }
                     write_frame_cv(perspective_out_cmpr, perspective_img);

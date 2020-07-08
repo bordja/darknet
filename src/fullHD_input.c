@@ -54,8 +54,8 @@ mat_cv* det_img;
 mat_cv* show_img;
 mat_cv* perspective_img;
 
-point_cv car_perspective_detections[300];
-point_cv person_perspective_detections[300];
+point_cv car_perspective_detections[MAX_CAR_DETS];
+point_cv person_perspective_detections[MAX_PERSON_DETS];
 //std::ifstream yuv_stream;
 
 static const int thread_wait_ms = 1;
@@ -303,30 +303,38 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     uint16_t Persons = (uint16_t)num_persons;
                     fstream_write((char*)&Persons, sizeof(Persons));
                     cv_Color color = LIGHT_BLUE;
-                    for (int dets = 0; dets < num_persons; dets++)
+                    for (int dets = 0; dets < MAX_PERSON_DETS; dets++)
                     {
-                        pixel_perspective_transform(person_detections[dets].x, person_detections[dets].y,
-                            &person_perspective_detections[dets].x, &person_perspective_detections[dets].y, color);
+                        uint16_t person_det_x = 0;
+                        uint16_t person_det_y = 0;
+                        if (dets < num_persons)
+                        {
+                            pixel_perspective_transform(person_detections[dets].x, person_detections[dets].y,
+                                &person_perspective_detections[dets].x, &person_perspective_detections[dets].y, color);
 
-                        uint16_t person_det_x = (uint16_t)person_perspective_detections[dets].x;
+                            person_det_x = (uint16_t)person_perspective_detections[dets].x;
+                            person_det_y = (uint16_t)person_perspective_detections[dets].y;
+                        }
                         fstream_write((char*)&person_det_x, sizeof(person_det_x));
-
-                        uint16_t person_det_y = (uint16_t)person_perspective_detections[dets].y;
                         fstream_write((char*)&person_det_y, sizeof(person_det_y));
                     }
 
                     uint16_t Cars = (uint16_t)num_cars;
                     fstream_write((char*)&Cars, sizeof(Cars));
                     color = PURPLE;
-                    for (int dets = 0; dets < num_cars; dets++)
+                    for (int dets = 0; dets < MAX_CAR_DETS; dets++)
                     {
-                        pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
-                            &car_perspective_detections[dets].x, &car_perspective_detections[dets].y, color);
+                        uint16_t car_det_x = 0;
+                        uint16_t car_det_y = 0;
+                        if (dets < num_cars)
+                        {
+                            pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
+                                &car_perspective_detections[dets].x, &car_perspective_detections[dets].y, color);
 
-                        uint16_t car_det_x = (uint16_t)car_perspective_detections[dets].x;
+                            car_det_x = (uint16_t)car_perspective_detections[dets].x;
+                            car_det_y = (uint16_t)car_perspective_detections[dets].y;
+                        }
                         fstream_write((char*)&car_det_x, sizeof(car_det_x));
-
-                        uint16_t car_det_y = (uint16_t)car_perspective_detections[dets].y;
                         fstream_write((char*)&car_det_y, sizeof(car_det_y));
                     }
                     write_frame_cv(perspective_out_video_cmpr, perspective_img);

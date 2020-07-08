@@ -99,11 +99,11 @@ extern "C" {
 
 int num_cars;
 int car_ID = 2;
-point_cv car_detections[300];
+point_cv car_detections[MAX_CAR_DETS];
 
 int num_persons;
 int person_ID = 0;
-point_cv person_detections[300];
+point_cv person_detections[MAX_PERSON_DETS];
 
 extern "C" mat_cv *load_image_mat_cv(const char *filename, int flag)
 {
@@ -1186,6 +1186,12 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
     //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, width, 8, 0);
     //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, CV_FILLED, 8, 0);    // filled
     //printf("width -> %d, height -> %d\n", show_img->cols, show_img->rows);
+
+    if (num_cars > MAX_CAR_DETS)
+        num_cars = MAX_CAR_DETS;
+    if (num_persons > MAX_PERSON_DETS)
+        num_persons = MAX_PERSON_DETS;
+
     for (int i  = 0; i < num_cars; i++)
     {
         if ((car_detections[i].x - end_offset >= 0) &&

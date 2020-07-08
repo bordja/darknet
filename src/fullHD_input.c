@@ -202,23 +202,31 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
          * 
          *  [0]                    -> Camera ID (1B)          --
          *  [1:4]                  -> POLE_1_ID (4B)           |
-         *  [5:8]                  -> POLE_2_ID (4B)           |- Camera/Stream Info
+         *  [5:8]                  -> POLE_2_ID (4B)           |
          *  [9:12]                 -> POLE_3_ID (4B)           |
-         *  [13:16]                -> POLE_4_ID (4B)          --
+         *  [13:16]                -> POLE_4_ID (4B)           |
+         *  [17:18]                -> pole_rel_1_x (2B)        |
+         *  [19:20]                -> pole_rel_1_y (2B)        |- Camera/Stream Info
+         *  [21:22]                -> pole_rel_2_x (2B)        |
+         *  [23:24]                -> pole_rel_2_y (2B)        |
+         *  [25:26]                -> pole_rel_3_x (2B)        |
+         *  [27:28]                -> pole_rel_3_y (2B)        |
+         *  [29:30]                -> pole_rel_4_x (2B)        |
+         *  [31:32]                -> pole_rel_4_y (2B)       --
          *
-         *  [17:24]                -> Frame_0_Timestamp (8B)  --
-         *  [25:26]                -> PersonNumber (2B)        |
-         *  [17:28]                -> x0 (2B)                  |
-         *  [29:30]                -> y0 (2B)                  |
-         *  [31:32]                -> x1 (2B)                  |
-         *  [33:34]                -> y1 (2B)                  |
+         *  [33:40]                -> Frame_0_Timestamp (8B)  --
+         *  [41:42]                -> PersonNumber (2B)        |
+         *  [43:44]                -> x0 (2B)                  |
+         *  [47:46]                -> y0 (2B)                  |
+         *  [49:48]                -> x1 (2B)                  |
+         *  [51:52]                -> y1 (2B)                  |
          *              ...                                    |
          *                                                     |- Frame_0 Info
-         *  [(25+2P):(25+2P+1)]    -> CarNumer (2B)            |
-         *  [(25+2P+2):(25+2P+3)]  -> x0 (2B)                  |
-         *  [(25+2P+4):(25+2P+5)]  -> y0 (2B)                  |
-         *  [(25+2P+6):(25+2P+7)]  -> x1 (2B)                  |
-         *  [(25+2P+8):(25+2P+9)]  -> y1 (2B)                  |
+         *  [(41+2P):(41+2P+1)]    -> CarNumer (2B)            |
+         *  [(41+2P+2):(41+2P+3)]  -> x0 (2B)                  |
+         *  [(41+2P+4):(41+2P+5)]  -> y0 (2B)                  |
+         *  [(41+2P+6):(41+2P+7)]  -> x1 (2B)                  |
+         *  [(41+2P+8):(41+2P+9)]  -> y1 (2B)                  |
          *              ...                                    |
          *                                                    --
          *              ...
@@ -247,6 +255,7 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
         float avg_fps = 0;
         bool finished_clicking = false;
         bool window_created = false;
+        bool poles_sent = false;
 
         fstream_write((char*)&cameraID, sizeof(cameraID));
 
@@ -297,6 +306,17 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     get_perspective_transform();
                     cv_copy_from_output_perspective((void*)perspective_img);
                     write_frame_cv(perspective_out_video, perspective_img);
+
+                    if (!poles_sent)
+                    {
+                        int pole_nums = (&pole_perspective_loc_x)[1] - pole_perspective_loc_x;
+                        for (int i = 0; i < pole_nums; i++)
+                        {
+                            fstream_write((char*)&(pole_perspective_loc_x[i]), sizeof(pole_perspective_loc_x[i]));
+                            fstream_write((char*)&(pole_perspective_loc_y[i]), sizeof(pole_perspective_loc_y[i]));
+                        }
+                        poles_sent = true;
+                    }
 
                     fstream_write((char*)&current_timestamp, sizeof(current_timestamp));
 

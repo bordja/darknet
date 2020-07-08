@@ -17,6 +17,8 @@ extern "C" {
 #include <opencv2/opencv.hpp>
 
 int pole_ids_init[4] = {0};
+uint16_t pole_perspective_loc_x[4] = {0};
+uint16_t pole_perspective_loc_y[4] = {0};
 
 static cv::Mat input_perspective;
 static bool clickEventFinished = false;
@@ -494,6 +496,16 @@ extern "C" void get_perspective_transform(void)
         next_rect(dst_finetune, dst_finetune_next_rect_1);
         next_rect(dst_finetune_next_rect_1, dst_finetune_next_rect_2);
         next_rect(dst_finetune_next_rect_2, dst_finetune_next_rect_3);
+
+        pole_perspective_loc_x[0] = dst_finetune[3].x;
+        pole_perspective_loc_y[0] = dst_finetune[3].y;
+        pole_perspective_loc_x[1] = dst_finetune[2].x;
+        pole_perspective_loc_y[1] = dst_finetune[2].y;
+        pole_perspective_loc_x[2] = dst_finetune[0].x;
+        pole_perspective_loc_y[2] = dst_finetune[0].y;
+        pole_perspective_loc_x[3] = dst_finetune[1].x;
+        pole_perspective_loc_y[3] = dst_finetune[1].y;
+
         defined_finetune_pole = true;
     }
     IPM ipm_finetune(cv::Size(WIDTH, HEIGHT), cv::Size(WIDTH, HEIGHT), src_finetune, dst_finetune);

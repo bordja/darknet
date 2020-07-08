@@ -34,6 +34,8 @@ typedef enum cv_Color
 }cv_Color;
 
 extern int pole_ids_init[4];
+extern uint16_t pole_perspective_loc_x[4];
+extern uint16_t pole_perspective_loc_y[4];
 
 void cv_copy_to_input_perspective(void* input);
 void cv_copy_from_output_perspective(void* output);

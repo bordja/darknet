@@ -61,13 +61,45 @@ enum CameraView
     RIGHT
 };
 
-static void vertical_road_line_modification(cv::Point2f src[], cv::Point2f dst[],
-int weight, enum line_Mofidy mode, enum CameraView camView)
+static void vertical_road_lines_modification(cv::Point2f src1[], cv::Point2f src2[],
+cv::Point2f dst1[], cv::Point2f dst2[], int weight1, int weight2, enum line_Mofidy mode, enum CameraView camView)
 {
     double w_0_x, w_0_y, w_0, w_1_x, w_1_y, w_1, w;
-    int diff_x = abs(src[0].x - src[1].x);
-    int diff_y = abs(src[0].y - src[1].y);
-    double theta = atan2(diff_y, diff_x);
+    int diff_x_1 = abs(src1[0].x - src1[1].x);
+    int diff_y_1 = abs(src1[0].y - src1[1].y);
+    double theta_1 = atan2(diff_y_1, diff_x_1);
+
+    int diff_x_2 = abs(src2[0].x - src2[1].x);
+    int diff_y_2 = abs(src2[0].y - src2[1].y);
+    double theta_2 = atan2(diff_y_2, diff_x_2);
+
+    int destination_1_0_x;
+    int destination_1_0_y;
+    int destination_1_0_x_half;
+    int destination_1_0_y_half;
+    int destination_1_0_x_quart;
+    int destination_1_0_y_quart;
+
+    int destination_2_0_x;
+    int destination_2_0_y;
+    int destination_2_0_x_half;
+    int destination_2_0_y_half;
+    int destination_2_0_x_quart;
+    int destination_2_0_y_quart;
+
+    int destination_1_1_x;
+    int destination_1_1_y;
+    int destination_1_1_x_half;
+    int destination_1_1_y_half;
+    int destination_1_1_x_quart;
+    int destination_1_1_y_quart;
+
+    int destination_2_1_x;
+    int destination_2_1_y;
+    int destination_2_1_x_half;
+    int destination_2_1_y_half;
+    int destination_2_1_x_quart;
+    int destination_2_1_y_quart;
 
     switch (camView)
     {
@@ -75,49 +107,164 @@ int weight, enum line_Mofidy mode, enum CameraView camView)
         switch (mode)
         {
         case SPREAD:
-            dst[0].x = int(src[0].x - weight * cos(theta));
-            dst[0].y = int(src[0].y - weight * sin(theta));
-            dst[1].x = int(src[1].x + weight * cos(theta));
-            dst[1].y = int(src[1].y + weight * sin(theta));
+            destination_1_0_x = int(src1[0].x - weight1 * cos(theta_1));
+            destination_1_0_y = int(src1[0].y - weight1 * sin(theta_1));
+            destination_1_0_x_half = int(src1[0].x - (weight1/2) * cos(theta_1));
+            destination_1_0_y_half = int(src1[0].y - (weight1/2) * sin(theta_1));
+            destination_1_0_x_quart = int(src1[0].x - (weight1/4) * cos(theta_1));;
+            destination_1_0_y_quart = int(src1[0].y - (weight1/4) * sin(theta_1));
+
+            destination_2_0_x = int(src2[0].x - weight2 * cos(theta_2));
+            destination_2_0_y = int(src2[0].y - weight2 * sin(theta_2));
+            destination_2_0_x_half = int(src2[0].x - (weight2/2) * cos(theta_2));
+            destination_2_0_y_half = int(src2[0].y - (weight2/2) * sin(theta_2));
+            destination_2_0_x_quart = int(src2[0].x - (weight2/4) * cos(theta_2));;
+            destination_2_0_y_quart = int(src2[0].y - (weight2/4) * sin(theta_2));
+
+            if ((destination_1_0_x < WIDTH) &&
+                (destination_1_0_y < HEIGHT) &&
+                (destination_2_0_x < WIDTH) &&
+                (destination_2_0_y < HEIGHT))
+            {
+                dst1[0].x = destination_1_0_x;
+                dst1[0].y = destination_1_0_y;
+                dst2[0].x = destination_2_0_x;
+                dst2[0].y = destination_2_0_y;
+            }
+            else if ((destination_1_0_x_half < WIDTH) &&
+                (destination_1_0_y_half < HEIGHT) &&
+                (destination_2_0_x_half < WIDTH) &&
+                (destination_2_0_y_half < HEIGHT))
+            {
+                dst1[0].x = destination_1_0_x_half;
+                dst1[0].y = destination_1_0_y_half;
+                dst2[0].x = destination_2_0_x_half;
+                dst2[0].y = destination_2_0_y_half;
+            }
+            else if ((destination_1_0_x_quart < WIDTH) &&
+                (destination_1_0_y_quart < HEIGHT) &&
+                (destination_2_0_x_quart < WIDTH) &&
+                (destination_2_0_y_quart < HEIGHT))
+            {
+                dst1[0].x = destination_1_0_x_quart;
+                dst1[0].y = destination_1_0_y_quart;
+                dst2[0].x = destination_2_0_x_quart;
+                dst2[0].y = destination_2_0_y_quart;
+            }
+            else
+            {
+                dst1[0].x = src1[0].x;
+                dst1[0].y = src1[0].y;
+                dst2[0].x = src2[0].x;
+                dst2[0].y = src2[0].y;
+            }
+
+            if (dst1[0].y < dst2[0].y)
+            {
+                dst2[0].x = int(dst2[0].x - weight2 * cos(theta_2));
+                dst2[0].y = int(dst2[0].y - weight2 * sin(theta_2));
+            }
+            if (dst1[0].y < dst2[0].y)
+            {
+                dst2[0].x = int(dst2[0].x - (weight2/2) * cos(theta_2));
+                dst2[0].y = int(dst2[0].y - (weight2/2) * sin(theta_2));
+            }
+            if (dst1[0].y < dst2[0].y)
+            {
+                dst2[0].x = int(dst2[0].x - (weight2/4) * cos(theta_2));
+                dst2[0].y = int(dst2[0].y - (weight2/4) * sin(theta_2));
+            }
+
+            destination_1_1_x = int(src1[1].x + weight1 * cos(theta_1));
+            destination_1_1_y = int(src1[1].y + weight1 * sin(theta_1));
+            destination_1_1_x_half = int(src1[1].x + (weight1/2) * cos(theta_1));
+            destination_1_1_y_half = int(src1[1].y + (weight1/2) * sin(theta_1));
+            destination_1_1_x_quart = int(src1[1].x + (weight1/4) * cos(theta_1));;
+            destination_1_1_y_quart = int(src1[1].y + (weight1/4) * sin(theta_1));
+
+            destination_2_1_x = int(src2[1].x + weight2 * cos(theta_2));
+            destination_2_1_y = int(src2[1].y + weight2 * sin(theta_2));
+            destination_2_1_x_half = int(src2[1].x + (weight2/2) * cos(theta_2));
+            destination_2_1_y_half = int(src2[1].y + (weight2/2) * sin(theta_2));
+            destination_2_1_x_quart = int(src2[1].x + (weight2/4) * cos(theta_2));;
+            destination_2_1_y_quart = int(src2[1].y + (weight2/4) * sin(theta_2));
+
+            if ((destination_1_1_x < WIDTH) &&
+                (destination_1_1_y < HEIGHT) &&
+                (destination_2_1_x < WIDTH) &&
+                (destination_2_1_y < HEIGHT))
+            {
+                dst1[1].x = destination_1_1_x;
+                dst1[1].y = destination_1_1_y;
+                dst2[1].x = destination_2_1_x;
+                dst2[1].y = destination_2_1_y;
+            }
+            else if ((destination_1_1_x_half < WIDTH) &&
+                (destination_1_1_y_half < HEIGHT) &&
+                (destination_2_1_x_half < WIDTH) &&
+                (destination_2_1_y_half < HEIGHT))
+            {
+                dst1[1].x = destination_1_1_x_half;
+                dst1[1].y = destination_1_1_y_half;
+                dst2[1].x = destination_2_1_x_half;
+                dst2[1].y = destination_2_1_y_half;
+            }
+            else if ((destination_1_1_x_quart < WIDTH) &&
+                (destination_1_1_y_quart < HEIGHT) &&
+                (destination_2_1_x_quart < WIDTH) &&
+                (destination_2_1_y_quart < HEIGHT))
+            {
+                dst1[1].x = destination_1_1_x_quart;
+                dst1[1].y = destination_1_1_y_quart;
+                dst2[1].x = destination_2_1_x_quart;
+                dst2[1].y = destination_2_1_y_quart;
+            }
+            else
+            {
+                dst1[1].x = src1[1].x;
+                dst1[1].y = src1[1].y;
+                dst2[1].x = src2[1].x;
+                dst2[1].y = src2[1].y;
+            }
             break;
         case SPREAD_UP:
-            dst[0].x = int(src[0].x - weight * cos(theta));
-            dst[0].y = int(src[0].y - weight * sin(theta));
+            dst1[0].x = int(src1[0].x - weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y - weight1 * sin(theta_1));
             break;
         case SPREAD_DOWN:
-            dst[1].x = int(src[1].x + weight * cos(theta));
-            dst[1].y = int(src[1].y + weight * sin(theta));
+            dst1[1].x = int(src1[1].x + weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y + weight1 * sin(theta_1));
             break;
         case COMPRESS:
-            dst[0].x = int(src[0].x + weight * cos(theta));
-            dst[0].y = int(src[0].y + weight * sin(theta));
-            dst[1].x = int(src[1].x - weight * cos(theta));
-            dst[1].y = int(src[1].y - weight * sin(theta));
+            dst1[0].x = int(src1[0].x + weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y + weight1 * sin(theta_1));
+            dst1[1].x = int(src1[1].x - weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y - weight1 * sin(theta_1));
             break;
         case TRANSLATE_UP:
-            dst[0].x = int(src[0].x - weight * cos(theta));
-            dst[0].y = int(src[0].y - weight * sin(theta));
-            dst[1].x = int(src[1].x - weight * cos(theta));
-            dst[1].y = int(src[1].y - weight * sin(theta));
+            dst1[0].x = int(src1[0].x - weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y - weight1 * sin(theta_1));
+            dst1[1].x = int(src1[1].x - weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y - weight1 * sin(theta_1));
             break;
         case TRANSLATE_DOWN:
-            dst[0].x = int(src[0].x + weight * cos(theta));
-            dst[0].y = int(src[0].y + weight * sin(theta));
-            dst[1].x = int(src[1].x + weight * cos(theta));
-            dst[1].y = int(src[1].y + weight * sin(theta));
+            dst1[0].x = int(src1[0].x + weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y + weight1 * sin(theta_1));
+            dst1[1].x = int(src1[1].x + weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y + weight1 * sin(theta_1));
             break;
         case SPREAD_MAX:
-            w_0_x = (src[0].x - 0) / cos(theta);
-            w_0_y = (src[0].y - 0) / sin(theta);
+            w_0_x = (src1[0].x - 0) / cos(theta_1);
+            w_0_y = (src1[0].y - 0) / sin(theta_1);
             w_0 = std::min(w_0_x, w_0_y);
-            w_1_x = (WIDTH - src[1].x) / cos(theta);
-            w_1_y = (HEIGHT - src[1].y) / sin(theta);
+            w_1_x = (WIDTH - src1[1].x) / cos(theta_1);
+            w_1_y = (HEIGHT - src1[1].y) / sin(theta_1);
             w_1 = std::min(w_1_x, w_1_y);
             w = std::min(w_0, w_1);
-            dst[0].x = int(src[0].x - w * cos(theta));
-            dst[0].y = int(src[0].y - w * sin(theta));
-            dst[1].x = int(src[1].x + w * cos(theta));
-            dst[1].y = int(src[1].y + w * sin(theta));
+            dst1[0].x = int(src1[0].x - w * cos(theta_1));
+            dst1[0].y = int(src1[0].y - w * sin(theta_1));
+            dst1[1].x = int(src1[1].x + w * cos(theta_1));
+            dst1[1].y = int(src1[1].y + w * sin(theta_1));
             break;
         default:
             std::cout << "LEFT: Unrecognized line modification mode!" << std::endl;
@@ -128,49 +275,164 @@ int weight, enum line_Mofidy mode, enum CameraView camView)
         switch (mode)
         {
         case SPREAD:
-            dst[0].x = int(src[0].x + weight * cos(theta));
-            dst[0].y = int(src[0].y - weight * sin(theta));
-            dst[1].x = int(src[1].x - weight * cos(theta));
-            dst[1].y = int(src[1].y + weight * sin(theta));
+            destination_1_0_x = int(src1[0].x + weight1 * cos(theta_1));
+            destination_1_0_y = int(src1[0].y - weight1 * sin(theta_1));
+            destination_1_0_x_half = int(src1[0].x + (weight1/2) * cos(theta_1));
+            destination_1_0_y_half = int(src1[0].y - (weight1/2) * sin(theta_1));
+            destination_1_0_x_quart = int(src1[0].x + (weight1/4) * cos(theta_1));;
+            destination_1_0_y_quart = int(src1[0].y - (weight1/4) * sin(theta_1));
+
+            destination_2_0_x = int(src2[0].x + weight2 * cos(theta_2));
+            destination_2_0_y = int(src2[0].y - weight2 * sin(theta_2));
+            destination_2_0_x_half = int(src2[0].x + (weight2/2) * cos(theta_2));
+            destination_2_0_y_half = int(src2[0].y - (weight2/2) * sin(theta_2));
+            destination_2_0_x_quart = int(src2[0].x + (weight2/4) * cos(theta_2));;
+            destination_2_0_y_quart = int(src2[0].y - (weight2/4) * sin(theta_2));
+
+            if ((destination_1_0_x < WIDTH) &&
+                (destination_1_0_y < HEIGHT) &&
+                (destination_2_0_x < WIDTH) &&
+                (destination_2_0_y < HEIGHT))
+            {
+                dst1[0].x = destination_1_0_x;
+                dst1[0].y = destination_1_0_y;
+                dst2[0].x = destination_2_0_x;
+                dst2[0].y = destination_2_0_y;
+            }
+            else if ((destination_1_0_x_half < WIDTH) &&
+                (destination_1_0_y_half < HEIGHT) &&
+                (destination_2_0_x_half < WIDTH) &&
+                (destination_2_0_y_half < HEIGHT))
+            {
+                dst1[0].x = destination_1_0_x_half;
+                dst1[0].y = destination_1_0_y_half;
+                dst2[0].x = destination_2_0_x_half;
+                dst2[0].y = destination_2_0_y_half;
+            }
+            else if ((destination_1_0_x_quart < WIDTH) &&
+                (destination_1_0_y_quart < HEIGHT) &&
+                (destination_2_0_x_quart < WIDTH) &&
+                (destination_2_0_y_quart < HEIGHT))
+            {
+                dst1[0].x = destination_1_0_x_quart;
+                dst1[0].y = destination_1_0_y_quart;
+                dst2[0].x = destination_2_0_x_quart;
+                dst2[0].y = destination_2_0_y_quart;
+            }
+            else
+            {
+                dst1[0].x = src1[0].x;
+                dst1[0].y = src1[0].y;
+                dst2[0].x = src2[0].x;
+                dst2[0].y = src2[0].y;
+            }
+
+            if (dst1[0].y > dst2[0].y)
+            {
+                dst1[0].x = int(dst1[0].x + weight1 * cos(theta_1));
+                dst1[0].y = int(dst1[0].y - weight1 * sin(theta_1));
+            }
+            if (dst1[0].y > dst2[0].y)
+            {
+                dst1[0].x = int(dst1[0].x + (weight1/2) * cos(theta_1));
+                dst1[0].y = int(dst1[0].y - (weight1/2) * sin(theta_1));
+            }
+            if (dst1[0].y > dst2[0].y)
+            {
+                dst1[0].x = int(dst1[0].x + (weight1/4) * cos(theta_1));
+                dst1[0].y = int(dst1[0].y - (weight1/4) * sin(theta_1));
+            }
+
+            destination_1_1_x = int(src1[1].x - weight1 * cos(theta_1));
+            destination_1_1_y = int(src1[1].y + weight1 * sin(theta_1));
+            destination_1_1_x_half = int(src1[1].x - (weight1/2) * cos(theta_1));
+            destination_1_1_y_half = int(src1[1].y + (weight1/2) * sin(theta_1));
+            destination_1_1_x_quart = int(src1[1].x - (weight1/4) * cos(theta_1));;
+            destination_1_1_y_quart = int(src1[1].y + (weight1/4) * sin(theta_1));
+
+            destination_2_1_x = int(src2[1].x - weight2 * cos(theta_2));
+            destination_2_1_y = int(src2[1].y + weight2 * sin(theta_2));
+            destination_2_1_x_half = int(src2[1].x - (weight2/2) * cos(theta_2));
+            destination_2_1_y_half = int(src2[1].y + (weight2/2) * sin(theta_2));
+            destination_2_1_x_quart = int(src2[1].x - (weight2/4) * cos(theta_2));;
+            destination_2_1_y_quart = int(src2[1].y + (weight2/4) * sin(theta_2));
+
+            if ((destination_1_1_x < WIDTH) &&
+                (destination_1_1_y < HEIGHT) &&
+                (destination_2_1_x < WIDTH) &&
+                (destination_2_1_y < HEIGHT))
+            {
+                dst1[1].x = destination_1_1_x;
+                dst1[1].y = destination_1_1_y;
+                dst2[1].x = destination_2_1_x;
+                dst2[1].y = destination_2_1_y;
+            }
+            else if ((destination_1_1_x_half < WIDTH) &&
+                (destination_1_1_y_half < HEIGHT) &&
+                (destination_2_1_x_half < WIDTH) &&
+                (destination_2_1_y_half < HEIGHT))
+            {
+                dst1[1].x = destination_1_1_x_half;
+                dst1[1].y = destination_1_1_y_half;
+                dst2[1].x = destination_2_1_x_half;
+                dst2[1].y = destination_2_1_y_half;
+            }
+            else if ((destination_1_1_x_quart < WIDTH) &&
+                (destination_1_1_y_quart < HEIGHT) &&
+                (destination_2_1_x_quart < WIDTH) &&
+                (destination_2_1_y_quart < HEIGHT))
+            {
+                dst1[1].x = destination_1_1_x_quart;
+                dst1[1].y = destination_1_1_y_quart;
+                dst2[1].x = destination_2_1_x_quart;
+                dst2[1].y = destination_2_1_y_quart;
+            }
+            else
+            {
+                dst1[1].x = src1[1].x;
+                dst1[1].y = src1[1].y;
+                dst2[1].x = src2[1].x;
+                dst2[1].y = src2[1].y;
+            }
             break;
         case SPREAD_UP:
-            dst[0].x = int(src[0].x + weight * cos(theta));
-            dst[0].y = int(src[0].y - weight * sin(theta));
+            dst1[0].x = int(src1[0].x + weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y - weight1 * sin(theta_1));
             break;
         case SPREAD_DOWN:
-            dst[1].x = int(src[1].x - weight * cos(theta));
-            dst[1].y = int(src[1].y + weight * sin(theta));
+            dst1[1].x = int(src1[1].x - weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y + weight1 * sin(theta_1));
             break;
         case COMPRESS:
-            dst[0].x = int(src[0].x - weight * cos(theta));
-            dst[0].y = int(src[0].y + weight * sin(theta));
-            dst[1].x = int(src[1].x + weight * cos(theta));
-            dst[1].y = int(src[1].y - weight * sin(theta));
+            dst1[0].x = int(src1[0].x - weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y + weight1 * sin(theta_1));
+            dst1[1].x = int(src1[1].x + weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y - weight1 * sin(theta_1));
             break;
         case TRANSLATE_UP:
-            dst[0].x = int(src[0].x + weight * cos(theta));
-            dst[0].y = int(src[0].y - weight * sin(theta));
-            dst[1].x = int(src[1].x + weight * cos(theta));
-            dst[1].y = int(src[1].y - weight * sin(theta));
+            dst1[0].x = int(src1[0].x + weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y - weight1 * sin(theta_1));
+            dst1[1].x = int(src1[1].x + weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y - weight1 * sin(theta_1));
             break;
         case TRANSLATE_DOWN:
-            dst[0].x = int(src[0].x - weight * cos(theta));
-            dst[0].y = int(src[0].y + weight * sin(theta));
-            dst[1].x = int(src[1].x - weight * cos(theta));
-            dst[1].y = int(src[1].y + weight * sin(theta));
+            dst1[0].x = int(src1[0].x - weight1 * cos(theta_1));
+            dst1[0].y = int(src1[0].y + weight1 * sin(theta_1));
+            dst1[1].x = int(src1[1].x - weight1 * cos(theta_1));
+            dst1[1].y = int(src1[1].y + weight1 * sin(theta_1));
             break;
         case SPREAD_MAX:
-            w_0_x = (WIDTH - src[0].x) / cos(theta);
-            w_0_y = (src[0].y - 0) / sin(theta);
+            w_0_x = (WIDTH - src1[0].x) / cos(theta_1);
+            w_0_y = (src1[0].y - 0) / sin(theta_1);
             w_0 = std::min(w_0_x, w_0_y);
-            w_1_x = (src[1].x - 0) / cos(theta);
-            w_1_y = (HEIGHT - src[1].y) / sin(theta);
+            w_1_x = (src1[1].x - 0) / cos(theta_1);
+            w_1_y = (HEIGHT - src1[1].y) / sin(theta_1);
             w_1 = std::min(w_1_x, w_1_y);
             w = std::min(w_0, w_1);
-            dst[0].x = int(src[0].x + w * cos(theta));
-            dst[0].y = int(src[0].y - w * sin(theta));
-            dst[1].x = int(src[1].x - w * cos(theta));
-            dst[1].y = int(src[1].y + w * sin(theta));
+            dst1[0].x = int(src1[0].x + w * cos(theta_1));
+            dst1[0].y = int(src1[0].y - w * sin(theta_1));
+            dst1[1].x = int(src1[1].x - w * cos(theta_1));
+            dst1[1].y = int(src1[1].y + w * sin(theta_1));
             break;
         default:
             std::cout << "RIGHT: Unrecognized line modification mode!" << std::endl;
@@ -181,14 +443,14 @@ int weight, enum line_Mofidy mode, enum CameraView camView)
         std::cout << __func__ << " : Unrecognized angle." << std::endl;
         break;
     }
-    if (dst[0].x >= WIDTH)
-        dst[0].x = WIDTH - 1;
-    if (dst[0].y >= HEIGHT)
-        dst[0].y = HEIGHT - 1;
-    if (dst[1].x >= WIDTH)
-        dst[1].x = WIDTH - 1;
-    if (dst[1].y >= HEIGHT)
-        dst[1].y = HEIGHT - 1;
+    if (dst1[0].x >= WIDTH)
+        dst1[0].x = WIDTH - 1;
+    if (dst1[0].y >= HEIGHT)
+        dst1[0].y = HEIGHT - 1;
+    if (dst1[1].x >= WIDTH)
+        dst1[1].x = WIDTH - 1;
+    if (dst1[1].y >= HEIGHT)
+        dst1[1].y = HEIGHT - 1;
 }
 
 static void prepare_destination_warp(int start_point_high, int modification_point_high,
@@ -401,8 +663,8 @@ extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_
                     line_distance_r = distance;
                 }
 
-                vertical_road_line_modification(line_modify_l, line_modify_l, (int)line_distance_l, SPREAD, LEFT);
-                vertical_road_line_modification(line_modify_r, line_modify_r, (int)line_distance_r, SPREAD, LEFT);
+                vertical_road_lines_modification(line_modify_l, line_modify_r, line_modify_l, line_modify_r,
+                    (int)line_distance_l, (int)line_distance_r, SPREAD, LEFT);
                 coordinates[start_point_high - 1] = line_modify_l[0];
                 coordinates[start_point_low] = line_modify_l[1];
                 coordinates[start_point_high] = line_modify_r[0];
@@ -429,8 +691,8 @@ extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_
                     line_distance_r = distance;
                 }
 
-                vertical_road_line_modification(line_modify_l, line_modify_l, (int)line_distance_l, SPREAD, RIGHT);
-                vertical_road_line_modification(line_modify_r, line_modify_r, (int)line_distance_r, SPREAD, RIGHT);
+                vertical_road_lines_modification(line_modify_l, line_modify_r, line_modify_l, line_modify_r,
+                    (int)line_distance_l, (int)line_distance_r, SPREAD, RIGHT);
                 coordinates[start_point_high] = line_modify_l[0];
                 coordinates[start_point_low - 1] = line_modify_l[1];
                 coordinates[start_point_high + 1] = line_modify_r[0];

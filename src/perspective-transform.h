@@ -7,25 +7,25 @@
 extern "C" {
 #endif
 
-#define CAMERA_1_POLE_1_ID           3284453
-#define CAMERA_1_POLE_2_ID           3284225
-#define CAMERA_1_POLE_3_ID           3284454
-#define CAMERA_1_POLE_4_ID           3284224
+#define CAMERA_1_POLE_1_ID           3284220
+#define CAMERA_1_POLE_2_ID           3284458
+#define CAMERA_1_POLE_3_ID           3284221
+#define CAMERA_1_POLE_4_ID           3284457
 
 #define CAMERA_2_POLE_1_ID           3284453
 #define CAMERA_2_POLE_2_ID           3284225
 #define CAMERA_2_POLE_3_ID           3284454
 #define CAMERA_2_POLE_4_ID           3284224
 
-#define CAMERA_3_POLE_1_ID           3284453
-#define CAMERA_3_POLE_2_ID           3284225
-#define CAMERA_3_POLE_3_ID           3284454
-#define CAMERA_3_POLE_4_ID           3284224
+#define CAMERA_3_POLE_1_ID           3284456
+#define CAMERA_3_POLE_2_ID           3284222
+#define CAMERA_3_POLE_3_ID           3284457
+#define CAMERA_3_POLE_4_ID           3284221
 
-#define CAMERA_4_POLE_1_ID           3284453
-#define CAMERA_4_POLE_2_ID           3284225
-#define CAMERA_4_POLE_3_ID           3284454
-#define CAMERA_4_POLE_4_ID           3284224
+#define CAMERA_4_POLE_1_ID           3284218
+#define CAMERA_4_POLE_2_ID           3284460
+#define CAMERA_4_POLE_3_ID           3284219
+#define CAMERA_4_POLE_4_ID           3284459
 
 typedef enum cv_Color
 {

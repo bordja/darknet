@@ -40,7 +40,7 @@ extern uint16_t pole_perspective_loc_y[4];
 void cv_copy_to_input_perspective(void* input);
 void cv_copy_from_output_perspective(void* output);
 void deinit_perspective_params(void);
-void pixel_perspective_transform(int x, int y, int* x_new, int* y_new, cv_Color color);
+int pixel_perspective_transform(int x, int y, int* x_new, int* y_new, cv_Color color);
 bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_window_name);
 void get_perspective_transform(void);
 

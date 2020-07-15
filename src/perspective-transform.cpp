@@ -564,7 +564,7 @@ extern "C" void deinit_perspective_params(void)
     dst_finetune_next_rect_3.clear();
 }
 
-extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new, cv_Color color)
+extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new, cv_Color color)
 {
     cv::Point2f input(x,y);
     cv::Point2f warp;
@@ -586,10 +586,18 @@ extern "C" void pixel_perspective_transform(int x, int y, int* x_new, int* y_new
     *x_new = finetune.x;
     *y_new = finetune.y;
 
+    if ((*x_new >= WIDTH) ||
+        (*y_new >= HEIGHT))
+    {
+        return -1;
+    }
+
     if (color == PURPLE)
         cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
     else if (color == LIGHT_BLUE)
         cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 255, 0), -1);
+
+    return 0;
 }
 
 extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_window_name)

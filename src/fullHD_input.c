@@ -222,16 +222,16 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
          *  [49:50]                -> y1 (2B)                  |
          *              ...                                    |
          *                                                     |- Frame_0 Info
-         *  [(41+4*50):(41+4*50+1)]    -> CarNumer (2B)        |
-         *  [(41+4*50+2):(41+4*50+3)]  -> x0 (2B)              |
-         *  [(41+4*50+4):(41+4*50+5)]  -> y0 (2B)              |
-         *  [(41+4*50+6):(41+4*50+7)]  -> x1 (2B)              |
-         *  [(41+4*50+8):(41+4*50+9)]  -> y1 (2B)              |
+         *  [(43+4*50):(43+4*50+1)]    -> CarNumer (2B)        |
+         *  [(43+4*50+2):(43+4*50+3)]  -> x0 (2B)              |
+         *  [(43+4*50+4):(43+4*50+5)]  -> y0 (2B)              |
+         *  [(43+4*50+6):(43+4*50+7)]  -> x1 (2B)              |
+         *  [(43+4*50+8):(43+4*50+9)]  -> y1 (2B)              |
          *              ...                                    |
          *                                                    --
          *              ...
          */
-        const char* out_perspective[MAX_PATH_LENGTH];
+        const char out_perspective[MAX_PATH_LENGTH];
         snprintf(out_perspective, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d", cameraID);
         fstream_open(out_perspective, OUTPUT);
         if (!fstream_is_open(OUTPUT))
@@ -242,13 +242,13 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
 
         /* Opening output video (without detections) */
         write_cv* perspective_out_video = NULL;
-        const char* out_video_path[MAX_PATH_LENGTH];
+        const char out_video_path[MAX_PATH_LENGTH];
         snprintf(out_video_path, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d.mp4", cameraID);
         perspective_out_video = create_video_writer(out_video_path, 'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
 
         /* Opening output video (without detections) */
         write_cv* perspective_out_video_cmpr = NULL;
-        const char* out_video_path_cmpr[MAX_PATH_LENGTH];
+        const char out_video_path_cmpr[MAX_PATH_LENGTH];
         snprintf(out_video_path_cmpr, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d_cmpr.mp4", cameraID);
         perspective_out_video_cmpr = create_video_writer(out_video_path_cmpr, 'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
 
@@ -265,6 +265,8 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
             uint32_t pole_id = (uint32_t)pole_ids_init[i];
             fstream_write((char*)&pole_id, sizeof(pole_id));
         }
+
+        int frameSaveCnt = 0;
 
         while (!fstream_eof(INPUT) && !fstream_eof(TIMESTAMPS)) {
             ++count;
@@ -320,18 +322,26 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
 
                     fstream_write((char*)&current_timestamp, sizeof(current_timestamp));
 
-                    uint16_t Persons = (uint16_t)num_persons;
-                    fstream_write((char*)&Persons, sizeof(Persons));
+                    int person_indx = 0;
                     cv_Color color = LIGHT_BLUE;
+                    for (int dets = 0; dets < num_persons; dets++)
+                    {
+                        int retVal = pixel_perspective_transform(person_detections[dets].x, person_detections[dets].y,
+                                &person_perspective_detections[person_indx].x, &person_perspective_detections[person_indx].y, color);
+                        if (retVal == 0)
+                        {
+                            person_indx++;
+                        }
+                    }
+
+                    uint16_t Persons = (uint16_t)person_indx;
+                    fstream_write((char*)&Persons, sizeof(Persons));
                     for (int dets = 0; dets < MAX_PERSON_DETS; dets++)
                     {
                         uint16_t person_det_x = 0;
                         uint16_t person_det_y = 0;
-                        if (dets < num_persons)
+                        if (dets < Persons)
                         {
-                            pixel_perspective_transform(person_detections[dets].x, person_detections[dets].y,
-                                &person_perspective_detections[dets].x, &person_perspective_detections[dets].y, color);
-
                             person_det_x = (uint16_t)person_perspective_detections[dets].x;
                             person_det_y = (uint16_t)person_perspective_detections[dets].y;
                         }
@@ -339,18 +349,26 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                         fstream_write((char*)&person_det_y, sizeof(person_det_y));
                     }
 
-                    uint16_t Cars = (uint16_t)num_cars;
-                    fstream_write((char*)&Cars, sizeof(Cars));
+                    int car_indx = 0;
                     color = PURPLE;
+                    for (int dets = 0; dets < num_cars; dets++)
+                    {
+                        int retVal = pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
+                                &car_perspective_detections[car_indx].x, &car_perspective_detections[car_indx].y, color);
+                        if (retVal == 0)
+                        {
+                            car_indx++;
+                        }
+                    }
+
+                    uint16_t Cars = (uint16_t)car_indx;
+                    fstream_write((char*)&Cars, sizeof(Cars));
                     for (int dets = 0; dets < MAX_CAR_DETS; dets++)
                     {
                         uint16_t car_det_x = 0;
                         uint16_t car_det_y = 0;
-                        if (dets < num_cars)
+                        if (dets < Cars)
                         {
-                            pixel_perspective_transform(car_detections[dets].x, car_detections[dets].y,
-                                &car_perspective_detections[dets].x, &car_perspective_detections[dets].y, color);
-
                             car_det_x = (uint16_t)car_perspective_detections[dets].x;
                             car_det_y = (uint16_t)car_perspective_detections[dets].y;
                         }
@@ -358,6 +376,14 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                         fstream_write((char*)&car_det_y, sizeof(car_det_y));
                     }
                     write_frame_cv(perspective_out_video_cmpr, perspective_img);
+                    if (frameSaveCnt < 20)
+                    {
+                        frameSaveCnt++;
+                        char frame_save_path[MAX_PATH_LENGTH];
+                        snprintf(frame_save_path, MAX_PATH_LENGTH - 1, "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/camera_%d_frame_%d.jpg",
+                        cameraID, frameSaveCnt);
+                        save_cv_jpg(perspective_img, frame_save_path);
+                    }
                     show_image_mat(perspective_img, "Perspective transform");
                 }
                 for (int dets = 0; dets < num_cars; dets++)

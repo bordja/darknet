@@ -56,7 +56,6 @@ mat_cv* perspective_img;
 
 point_cv car_perspective_detections[MAX_CAR_DETS];
 point_cv person_perspective_detections[MAX_PERSON_DETS];
-//std::ifstream yuv_stream;
 
 static const int thread_wait_ms = 1;
 static volatile int run_fetch_in_thread_fullHD = 0;
@@ -71,7 +70,7 @@ void *detect_in_thread_fullHD(void *ptr);
 void *detect_in_thread_sync_fullHD(void *ptr);
 double get_wall_time_fullHD();
 
-#define OUTPUT_PERSPECTIVE_PATH "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/perspective_out_"
+#define OUTPUT_PERSPECTIVE_PATH "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/out_perspective_dets_v4/perspective_out_"
 #define MAX_PATH_LENGTH 512
 
 unsigned char uyvy_frame[FRAME_SIZE_UYVY];
@@ -142,16 +141,15 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
     demo_thresh = thresh;
     int delay = frame_skip;
     printf("Full HD\n");
-    net = parse_network_cfg_custom(cfgfile, 1, 1);    // set batch=1
+    net = parse_network_cfg_custom(cfgfile, 1, 1);
     if (weightfile) {
         load_weights(&net, weightfile);
     }
-    //net.benchmark_layers = benchmark_layers;
+
     fuse_conv_batchnorm(net);
     calculate_binary_weights(net);
     srand(2222222);
 
-    //yuv_stream.open(filename, std::ios_base::binary);
     fstream_open(in_filename, INPUT);
     fstream_open(in_timestamps, TIMESTAMPS);
     
@@ -176,19 +174,19 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
         if (custom_create_thread(&fetch_thread, 0, fetch_in_thread_fullHD, 0)) error("Thread creation failed");
         if (custom_create_thread(&detect_thread, 0, detect_in_thread_fullHD, 0)) error("Thread creation failed");
 
-        fetch_in_thread_sync_fullHD(0); //fetch_in_thread(0);
+        fetch_in_thread_sync_fullHD(0);
         det_img = in_img;
         det_s = in_s;
 
-        fetch_in_thread_sync_fullHD(0); //fetch_in_thread(0);
-        detect_in_thread_sync_fullHD(0); //fetch_in_thread(0);
+        fetch_in_thread_sync_fullHD(0);
+        detect_in_thread_sync_fullHD(0);
         det_img = in_img;
         det_s = in_s;
 
         for (j = 0; j < NFRAMES / 2; ++j) {
             free_detections(dets, nboxes);
-            fetch_in_thread_sync_fullHD(0); //fetch_in_thread(0);
-            detect_in_thread_sync_fullHD(0); //fetch_in_thread(0);
+            fetch_in_thread_sync_fullHD(0);
+            detect_in_thread_sync_fullHD(0);
             det_img = in_img;
             det_s = in_s;
         }
@@ -241,12 +239,6 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
         }
 
         /* Opening output video (without detections) */
-        write_cv* perspective_out_video = NULL;
-        const char out_video_path[MAX_PATH_LENGTH];
-        snprintf(out_video_path, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d.mp4", cameraID);
-        perspective_out_video = create_video_writer(out_video_path, 'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
-
-        /* Opening output video (without detections) */
         write_cv* perspective_out_video_cmpr = NULL;
         const char out_video_path_cmpr[MAX_PATH_LENGTH];
         snprintf(out_video_path_cmpr, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d_cmpr.mp4", cameraID);
@@ -266,21 +258,17 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
             fstream_write((char*)&pole_id, sizeof(pole_id));
         }
 
-        int frameSaveCnt = 0;
-
         while (!fstream_eof(INPUT) && !fstream_eof(TIMESTAMPS)) {
             ++count;
-            //if (count % frame_skip == 1)
             {
-                const float nms = .45;    // 0.4F
+                const float nms = .45;
                 int local_nboxes = nboxes;
                 detection *local_dets = dets;
                 this_thread_yield();
 
-                custom_atomic_store_int(&run_fetch_in_thread_fullHD, 1); // if (custom_create_thread(&fetch_thread, 0, fetch_in_thread, 0)) error("Thread creation failed");
-                custom_atomic_store_int(&run_detect_in_thread_fullHD, 1); // if (custom_create_thread(&detect_thread, 0, detect_in_thread, 0)) error("Thread creation failed");
+                custom_atomic_store_int(&run_fetch_in_thread_fullHD, 1);
+                custom_atomic_store_int(&run_detect_in_thread_fullHD, 1);
 
-                //if (nms) do_nms_obj(local_dets, local_nboxes, l.classes, nms);    // bad results
                 if (nms) {
                     if (l.nms_kind == DEFAULT_NMS) do_nms_sort(local_dets, local_nboxes, l.classes, nms);
                     else diounms_sort(local_dets, local_nboxes, l.classes, nms, l.nms_kind, l.beta_nms);
@@ -307,7 +295,6 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     }
                     get_perspective_transform();
                     cv_copy_from_output_perspective((void*)perspective_img);
-                    write_frame_cv(perspective_out_video, perspective_img);
 
                     if (!poles_sent)
                     {
@@ -376,14 +363,6 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                         fstream_write((char*)&car_det_y, sizeof(car_det_y));
                     }
                     write_frame_cv(perspective_out_video_cmpr, perspective_img);
-                    if (frameSaveCnt < 20)
-                    {
-                        frameSaveCnt++;
-                        char frame_save_path[MAX_PATH_LENGTH];
-                        snprintf(frame_save_path, MAX_PATH_LENGTH - 1, "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/camera_%d_frame_%d.jpg",
-                        cameraID, frameSaveCnt);
-                        save_cv_jpg(perspective_img, frame_save_path);
-                    }
                     show_image_mat(perspective_img, "Perspective transform");
                 }
                 for (int dets = 0; dets < num_cars; dets++)
@@ -408,18 +387,17 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                 else if (c == 27 || c == 1048603) // ESC - exit (OpenCV 2.x / 3.x)
                 {
                     flag_exit = 1;
-                    release_video_writer(&perspective_out_video);
                     release_video_writer(&perspective_out_video_cmpr);
                 }
 
                 while (custom_atomic_load_int(&run_detect_in_thread_fullHD)) {
                     if (avg_fps > 180) this_thread_yield();
-                    else this_thread_sleep_for(thread_wait_ms);   // custom_join(detect_thread, 0);
+                    else this_thread_sleep_for(thread_wait_ms);
                 }
 
                 while (custom_atomic_load_int(&run_fetch_in_thread_fullHD)) {
                     if (avg_fps > 180) this_thread_yield();
-                    else this_thread_sleep_for(thread_wait_ms);   // custom_join(fetch_thread, 0);
+                    else this_thread_sleep_for(thread_wait_ms);
                 }
                 free_image(det_s);
 
@@ -466,7 +444,6 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
         }
         free(alphabet);
         free_network(net);
-        //cudaProfilerStop();
         printf("Memory freed \n");
 
         destroy_window_cv("Perspective transform");
@@ -486,16 +463,12 @@ void *fetch_in_thread_fullHD(void *ptr)
         }
         
         fstream_read(uyvy_frame, FRAME_SIZE_UYVY, INPUT);
-        //cv::Mat yuv_frame(HEIGHT, WIDTH, CV_8UC2, uyvy_frame);
-        //cv::Mat bgr_frame(HEIGHT, WIDTH, CV_8UC3);
-        
         in_s = get_uyvy_image_from_stream_resize(uyvy_frame, net.w, net.h, net.c, &in_img);
 
         if (fstream_eof(INPUT)) {
             printf("Stream closed.\n");
             custom_atomic_store_int(&flag_exit, 1);
             custom_atomic_store_int(&run_fetch_in_thread_fullHD, 0);
-            //exit(EXIT_FAILURE);
             return 0;
         }
 

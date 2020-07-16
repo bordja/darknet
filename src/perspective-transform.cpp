@@ -587,7 +587,9 @@ extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new,
     *y_new = finetune.y;
 
     if ((*x_new >= WIDTH) ||
-        (*y_new >= HEIGHT))
+        (*y_new >= HEIGHT) ||
+        (*x_new < 0) ||
+        (*y_new < 0))
     {
         return -1;
     }

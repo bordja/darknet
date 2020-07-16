@@ -70,8 +70,9 @@ void *detect_in_thread_fullHD(void *ptr);
 void *detect_in_thread_sync_fullHD(void *ptr);
 double get_wall_time_fullHD();
 
-#define OUTPUT_PERSPECTIVE_PATH "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/out_perspective_dets_v4/perspective_out_"
+#define OUTPUT_PERSPECTIVE_PATH "/home/rtrk/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/out_perspective_dets_v5/"
 #define MAX_PATH_LENGTH 512
+#define VIDEO_FPS 5
 
 unsigned char uyvy_frame[FRAME_SIZE_UYVY];
 void fullHD_input(int argc, char **argv)
@@ -230,7 +231,7 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
          *              ...
          */
         const char out_perspective[MAX_PATH_LENGTH];
-        snprintf(out_perspective, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d", cameraID);
+        snprintf(out_perspective, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "out_perspective_%d", cameraID);
         fstream_open(out_perspective, OUTPUT);
         if (!fstream_is_open(OUTPUT))
         {
@@ -238,11 +239,23 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
             return;
         }
 
-        /* Opening output video (without detections) */
-        write_cv* perspective_out_video_cmpr = NULL;
-        const char out_video_path_cmpr[MAX_PATH_LENGTH];
-        snprintf(out_video_path_cmpr, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "%d_cmpr.mp4", cameraID);
-        perspective_out_video_cmpr = create_video_writer(out_video_path_cmpr, 'M', 'J', 'P', 'G', 10, WIDTH, HEIGHT, 1);
+        /* Opening input video */
+        write_cv* in_video = NULL;
+        const char in_video_path[MAX_PATH_LENGTH];
+        snprintf(in_video_path, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "in_%d.mp4", cameraID);
+        in_video = create_video_writer(in_video_path, 'M', 'J', 'P', 'G', VIDEO_FPS, WIDTH, HEIGHT, 1);
+
+        /* Opening output video (yolo) */
+        write_cv* out_yolo_video = NULL;
+        const char out_yolo_video_path[MAX_PATH_LENGTH];
+        snprintf(out_yolo_video_path, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "out_yolo_%d.mp4", cameraID);
+        out_yolo_video = create_video_writer(out_yolo_video_path, 'M', 'J', 'P', 'G', VIDEO_FPS, WIDTH, HEIGHT, 1);
+
+        /* Opening output video (perspective) */
+        write_cv* out_perspective_video = NULL;
+        const char out_perspective_video_path[MAX_PATH_LENGTH];
+        snprintf(out_perspective_video_path, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "out_perspective_%d.mp4", cameraID);
+        out_perspective_video = create_video_writer(out_perspective_video_path, 'M', 'J', 'P', 'G', VIDEO_FPS, WIDTH, HEIGHT, 1);
 
         float avg_fps = 0;
         bool finished_clicking = false;
@@ -286,6 +299,8 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     finished_clicking = mouse_click_and_param_init((void*)show_img, "FullHD");
                 else if (show_img != NULL)
                 {
+                    write_frame_cv(in_video, det_img);
+                    write_frame_cv(out_yolo_video, show_img);
                     show_image_mat(show_img, "FullHD");
                     perspective_img = show_img;
                     if (!window_created)
@@ -362,7 +377,7 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                         fstream_write((char*)&car_det_x, sizeof(car_det_x));
                         fstream_write((char*)&car_det_y, sizeof(car_det_y));
                     }
-                    write_frame_cv(perspective_out_video_cmpr, perspective_img);
+                    write_frame_cv(out_perspective_video, perspective_img);
                     show_image_mat(perspective_img, "Perspective transform");
                 }
                 for (int dets = 0; dets < num_cars; dets++)
@@ -387,7 +402,9 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                 else if (c == 27 || c == 1048603) // ESC - exit (OpenCV 2.x / 3.x)
                 {
                     flag_exit = 1;
-                    release_video_writer(&perspective_out_video_cmpr);
+                    release_video_writer(&in_video);
+                    release_video_writer(&out_yolo_video);
+                    release_video_writer(&out_perspective_video);
                 }
 
                 while (custom_atomic_load_int(&run_detect_in_thread_fullHD)) {

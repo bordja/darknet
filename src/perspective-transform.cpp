@@ -587,7 +587,14 @@ extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new,
     *y_new = finetune.y;
 
     if (color == PURPLE)
-        cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
+    {
+        if ((*x_new > pole_perspective_loc_x[0]) && (*x_new < pole_perspective_loc_x[1]))
+        {
+            cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
+        }
+        else
+            return 1;
+    }
     else if (color == LIGHT_BLUE)
         cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 255, 0), -1);
 

@@ -27,13 +27,18 @@ typedef struct point_cv {
     int y;
 } point_cv;
 
+typedef struct rectangle_cv {
+    int x0, y0;
+    int x_center, y_center;
+    int width;
+    int height;
+}rectangle_cv;
+
 extern int num_cars;
-extern point_cv car_detections[MAX_CAR_DETS];
-extern point_cv car_perspective_detections[MAX_CAR_DETS];
+extern rectangle_cv car_detections[MAX_CAR_DETS];
 
 extern int num_persons;
-extern point_cv person_detections[MAX_PERSON_DETS];
-extern point_cv person_perspective_detections[MAX_PERSON_DETS];
+extern rectangle_cv person_detections[MAX_PERSON_DETS];
 
 // cv::Mat
 mat_cv *load_image_mat_cv(const char *filename, int flag);
@@ -110,6 +115,9 @@ void save_cv_jpg(mat_cv *img, const char *name);
 // Draw Detection
 void draw_detections_cv_v3(mat_cv* show_img, detection *dets, int num, float thresh, char **names, image **alphabet, int classes, int ext_output);
 void draw_detection_and_point(mat_cv* mat, detection *dets, int num, float thresh, char **names, image **alphabet, int classes);
+
+void draw_frame_ID(mat_cv* drawing_frame, int frameID);
+void draw_quadrangle(mat_cv* mat, const point_cv* quad_pts, int class_id);
 
 // Draw Loss & Accuracy chart
 mat_cv* draw_train_chart(char *windows_name, float max_img_loss, int max_batches, int number_of_lines, int img_size, int dont_show, char* chart_path);

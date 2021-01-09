@@ -99,11 +99,13 @@ extern "C" {
 
 int num_cars;
 int car_ID = 2;
-point_cv car_detections[MAX_CAR_DETS];
+rectangle_cv car_detections[MAX_CAR_DETS];
+//point_cv car_detections[MAX_CAR_DETS];
 
 int num_persons;
 int person_ID = 0;
-point_cv person_detections[MAX_PERSON_DETS];
+rectangle_cv person_detections[MAX_PERSON_DETS];
+//point_cv person_detections[MAX_PERSON_DETS];
 
 extern "C" mat_cv *load_image_mat_cv(const char *filename, int flag)
 {
@@ -1090,12 +1092,10 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
                     char buff[10];
                     sprintf(buff, " (%2.0f%%)", dets[i].prob[j] * 100);
                     strcat(labelstr, buff);
-                    //printf("%s: %.0f%% ", names[j], dets[i].prob[j] * 100);
                 }
                 else {
                     strcat(labelstr, ", ");
                     strcat(labelstr, names[j]);
-                    //printf(", %s: %.0f%% ", names[j], dets[i].prob[j] * 100);
                 }
             }
         }
@@ -1149,25 +1149,34 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
             color.val[1] = green * 256;
             color.val[2] = blue * 256;
 
-            //     out_num_cars++;
-            //     continue;
-            // }
-
             cv::Point center_point;
             center_point.x = (pt1.x + pt2.x) / 2;
             center_point.y = (pt1.y + pt2.y) / 2;
 
             if (class_id == car_ID)
             {
-                car_detections[num_cars].x = center_point.x;
-                car_detections[num_cars].y = center_point.y;
+                car_detections[num_cars].x0 = pt1.x;
+                car_detections[num_cars].y0 = pt1.y;
+                car_detections[num_cars].x_center = center_point.x;
+                car_detections[num_cars].y_center = center_point.y;
+                car_detections[num_cars].width = pt2.x - pt1.x;
+                car_detections[num_cars].height = pt2.y - pt1.y;
             }
             else if (class_id == person_ID)
             {
-                person_detections[num_persons].x = center_point.x;
-                person_detections[num_persons].y = center_point.y;
-
+                person_detections[num_persons].x0 = pt1.x;
+                person_detections[num_persons].y0 = pt1.y;
+                person_detections[num_persons].x_center = center_point.x;
+                person_detections[num_persons].y_center = center_point.y;
+                person_detections[num_persons].width = pt2.x - pt1.x;
+                person_detections[num_persons].height = pt2.y - pt1.y;
             }
+
+            cv::rectangle(*show_img, pt1, pt2, color, width, 8, 0);
+            cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, width, 8, 0);
+            cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, CV_FILLED, 8, 0);    // filled
+            cv::Scalar black_color = CV_RGB(0, 0, 0);
+            cv::putText(*show_img, labelstr, pt_text, cv::FONT_HERSHEY_COMPLEX_SMALL, font_size, black_color, 2 * font_size, CV_AA);
         }
         if (class_id == car_ID)
             num_cars++;
@@ -1175,54 +1184,56 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
             num_persons++;
     }
 
-    // if (begin)
-    // {
-    //     in_num_cars = out_num_cars;
-    //     begin = false;
-    //     return;
-    // }
-
-    //cv::rectangle(*show_img, current_top_left, current_bottom_right, color, width, 8, 0);
-    //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, width, 8, 0);
-    //cv::rectangle(*show_img, pt_text_bg1, pt_text_bg2, color, CV_FILLED, 8, 0);    // filled
-    //printf("width -> %d, height -> %d\n", show_img->cols, show_img->rows);
-
     if (num_cars > MAX_CAR_DETS)
         num_cars = MAX_CAR_DETS;
     if (num_persons > MAX_PERSON_DETS)
         num_persons = MAX_PERSON_DETS;
+}
 
-    for (int i  = 0; i < num_cars; i++)
+// ====================================================================
+// Draw frame ID on screen
+// ====================================================================
+extern "C" void draw_frame_ID(mat_cv* drawing_frame, int frameID)
+{
+    char string_buffer[200];
+    cv::Mat* frame = (cv::Mat*)drawing_frame;
+
+    snprintf(string_buffer, 199, "Frame ID: %d", frameID);
+    cv::putText(*frame, string_buffer, cv::Point(10,100), cv::FONT_HERSHEY_PLAIN, 3, cv::Scalar(255,255,255));
+}
+
+extern "C" void draw_quadrangle(mat_cv* mat, const point_cv* quad_pts, int class_id)
+{
+    cv::Mat *show_img = (cv::Mat*)mat;
+    if ((class_id != car_ID) && (class_id != person_ID))
     {
-        if ((car_detections[i].x - end_offset >= 0) &&
-            (car_detections[i].x + end_offset < show_img->cols) &&
-            (car_detections[i].y - end_offset >= 0) &&
-            (car_detections[i].y + end_offset < show_img->rows))
-        {
-            cv::Point center_point;
-            center_point.x = car_detections[i].x;
-            center_point.y = car_detections[i].y;
-
-            cv::circle(*show_img, center_point, 8, cv::Scalar(255, 0, 255), -1);
-        }
+        std::cout << "Bad class id: " << class_id << std::endl;
+        return;
     }
-    for (int j = 0; j < num_persons; j++)
-    {
-        if ((person_detections[j].x - end_offset >= 0) &&
-            (person_detections[j].x + end_offset < show_img->cols) &&
-            (person_detections[j].y - end_offset >= 0) &&
-            (person_detections[j].y + end_offset < show_img->rows))
-        {
-            cv::Point center_point;
-            center_point.x = person_detections[j].x;
-            center_point.y = person_detections[j].y;
 
-            cv::circle(*show_img, center_point, 8, cv::Scalar(255, 255, 0), -1);
-        }
-        //in_car_detections[i] = out_car_detections[i];
-    }
-    //in_num_cars = out_num_cars;
-    //cv::putText(*show_img, labelstr, pt_text, cv::FONT_HERSHEY_COMPLEX_SMALL, font_size, black_color, 2 * font_size, CV_AA);
+    cv::Scalar color;
+    int classes = 80;
+
+    int offset = class_id * 123457 % classes;
+    float red = get_color(2, offset, classes);
+    float green = get_color(1, offset, classes);
+    float blue = get_color(0, offset, classes);
+
+    color.val[0] =  red * 256;
+    color.val[1] =  green * 256;
+    color.val[2] =  blue * 256;
+
+    std::vector<cv::Point> contour;
+    contour.push_back(cv::Point(quad_pts[0].x, quad_pts[0].y));
+    contour.push_back(cv::Point(quad_pts[1].x, quad_pts[1].y));
+    contour.push_back(cv::Point(quad_pts[2].x, quad_pts[2].y));
+    contour.push_back(cv::Point(quad_pts[3].x, quad_pts[3].y));
+
+    const cv::Point *pts = (const cv::Point*)cv::Mat(contour).data;
+    int npts = cv::Mat(contour).rows;
+    int width = std::max(1.0f, show_img->rows * .002f);
+
+    cv::polylines(*show_img, &pts, &npts, 1, true, color, width, 8, 0);
 }
 
 // ====================================================================

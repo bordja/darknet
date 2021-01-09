@@ -564,7 +564,7 @@ extern "C" void deinit_perspective_params(void)
     dst_finetune_next_rect_3.clear();
 }
 
-extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new, cv_Color color)
+extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new/*, cv_Color color*/)
 {
     cv::Point2f input(x,y);
     cv::Point2f warp;
@@ -586,17 +586,64 @@ extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new,
     *x_new = finetune.x;
     *y_new = finetune.y;
 
-    if (color == PURPLE)
+    // if (color == PURPLE)
+    // {
+    //     if ((*x_new > pole_perspective_loc_x[0]) && (*x_new < pole_perspective_loc_x[1]))
+    //     {
+    //         cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
+    //     }
+    //     else
+    //         return 1;
+    // }
+    // else if (color == LIGHT_BLUE)
+    //     cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 255, 0), -1);
+
+    return 0;
+}
+
+extern "C" int detection_perspective_transform(int x0, int y0, int width, int height, cv_Quadrangle* out/*, cv_Color color*/)
+{
+    int retVal = pixel_perspective_transform(x0, y0, &out->x2, &out->y2);
+    if (retVal != 0)
     {
-        if ((*x_new > pole_perspective_loc_x[0]) && (*x_new < pole_perspective_loc_x[1]))
-        {
-            cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 0, 255), -1);
-        }
-        else
-            return 1;
+        printf("x0, y0 - bad locations\n");
+        return 1;
     }
-    else if (color == LIGHT_BLUE)
-        cv::circle(result_finetune, finetune, 8, cv::Scalar(255, 255, 0), -1);
+    retVal = pixel_perspective_transform(x0 + width, y0, &out->x3, &out->y3);
+    if (retVal != 0)
+    {
+        printf("x1, y1 - bad locations\n");
+        return 1;
+    }
+    retVal = pixel_perspective_transform(x0, y0 + height, &out->x1, &out->y1);
+    if (retVal != 0)
+    {
+        printf("x2, y2 - bad locations\n");
+        return 1;
+    }
+    retVal = pixel_perspective_transform(x0 + width, y0 + height, &out->x0, &out->y0);
+    if (retVal != 0)
+    {
+        printf("x2, y2 - bad locations\n");
+        return 1;
+    }
+
+    // cv::Point pt0(out->x0 - (width/2), out->y0 - (height/2)); 
+    // cv::Point pt1(out->x0 + (width/2), out->y0 - (height/2));
+    // cv::Point pt2(out->x0 + (width/2), out->y0 + (height/2));
+    // cv::Point pt3(out->x0 - (width/2), out->y0 + (height/2));
+
+    // cv::Scalar color__;
+
+    // if (color == PURPLE)
+    //     color__ = cv::Scalar(255, 0, 255);
+    // else if (color == LIGHT_BLUE)
+    //     color__ = cv::Scalar(255, 255, 0);
+
+    // cv::line(result_finetune, pt0, pt1, color__, 2, cv::LINE_8, 0);
+    // cv::line(result_finetune, pt1, pt2, color__, 2, cv::LINE_8, 0);
+    // cv::line(result_finetune, pt2, pt3, color__, 2, cv::LINE_8, 0);
+    // cv::line(result_finetune, pt3, pt0, color__, 2, cv::LINE_8, 0);
 
     return 0;
 }

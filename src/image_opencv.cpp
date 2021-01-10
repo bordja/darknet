@@ -99,12 +99,12 @@ extern "C" {
 
 int num_cars;
 int car_ID = 2;
-rectangle_cv car_detections[MAX_CAR_DETS];
+detection_cv car_detections[MAX_CAR_DETS];
 //point_cv car_detections[MAX_CAR_DETS];
 
 int num_persons;
 int person_ID = 0;
-rectangle_cv person_detections[MAX_PERSON_DETS];
+detection_cv person_detections[MAX_PERSON_DETS];
 //point_cv person_detections[MAX_PERSON_DETS];
 
 extern "C" mat_cv *load_image_mat_cv(const char *filename, int flag)
@@ -1083,9 +1083,11 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
         for (int l = 0; l < strlen(labelstr); ++l)
             labelstr[l] = 0;
         int class_id = -1;
+        float probability = 0.0f;
         for (j = 0; j < classes; ++j) {
             int show = strncmp(names[j], "dont_show", 9);
             if (dets[i].prob[j] > thresh && show) {
+                probability = dets[i].prob[j];
                 if (class_id < 0) {
                     strcat(labelstr, names[j]);
                     class_id = j;
@@ -1161,6 +1163,7 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
                 car_detections[num_cars].y_center = center_point.y;
                 car_detections[num_cars].width = pt2.x - pt1.x;
                 car_detections[num_cars].height = pt2.y - pt1.y;
+                car_detections[num_cars].prob = probability;
             }
             else if (class_id == person_ID)
             {
@@ -1170,6 +1173,7 @@ extern "C" void draw_detection_and_point(mat_cv* mat, detection *dets, int num, 
                 person_detections[num_persons].y_center = center_point.y;
                 person_detections[num_persons].width = pt2.x - pt1.x;
                 person_detections[num_persons].height = pt2.y - pt1.y;
+                person_detections[num_persons].prob = probability;
             }
 
             cv::rectangle(*show_img, pt1, pt2, color, width, 8, 0);
@@ -1202,7 +1206,10 @@ extern "C" void draw_frame_ID(mat_cv* drawing_frame, int frameID)
     cv::putText(*frame, string_buffer, cv::Point(10,100), cv::FONT_HERSHEY_PLAIN, 3, cv::Scalar(255,255,255));
 }
 
-extern "C" void draw_quadrangle(mat_cv* mat, const point_cv* quad_pts, int class_id)
+// ====================================================================
+// Draw custom shape on screen
+// ====================================================================
+extern "C" void draw_custom_shape(mat_cv* mat, const point_cv* in_pts, int num_pts, int class_id, char* name, float prob)
 {
     cv::Mat *show_img = (cv::Mat*)mat;
     if ((class_id != car_ID) && (class_id != person_ID))
@@ -1211,9 +1218,42 @@ extern "C" void draw_quadrangle(mat_cv* mat, const point_cv* quad_pts, int class
         return;
     }
 
+    if (num_pts <= 0)
+    {
+        std::cout << "Number of points must be a postitive value, not " << num_pts << std::endl;
+        return;
+    }
+
     cv::Scalar color;
     int classes = 80;
 
+    /*
+     * - Variables for probability text.
+     */
+    char label_text[150];
+    cv::Point pt_text;
+    cv::Scalar black_color = CV_RGB(0, 0, 0);
+    float font_size = show_img->rows / 1500.F;
+    cv::Size const text_size = cv::getTextSize(name, cv::FONT_HERSHEY_COMPLEX_SMALL, font_size, 1, 0);
+    int width = std::max(1.0f, show_img->rows * .002f);
+
+    sprintf(label_text, "%s (%2.0f%%)", name, prob * 100);
+
+    pt_text.x = in_pts[0].x - 40;
+    pt_text.y = in_pts[0].y - 12;
+    width *= 8;
+
+    /* Display text on another location if a shape is a quad. */
+    if (num_pts == 4)
+    {   
+        pt_text.x = in_pts[2].x;
+        pt_text.y = in_pts[2].y - 4;
+        width /= 8;
+    }
+
+    /*
+     * - Line color determination.
+     */
     int offset = class_id * 123457 % classes;
     float red = get_color(2, offset, classes);
     float green = get_color(1, offset, classes);
@@ -1224,16 +1264,18 @@ extern "C" void draw_quadrangle(mat_cv* mat, const point_cv* quad_pts, int class
     color.val[2] =  blue * 256;
 
     std::vector<cv::Point> contour;
-    contour.push_back(cv::Point(quad_pts[0].x, quad_pts[0].y));
-    contour.push_back(cv::Point(quad_pts[1].x, quad_pts[1].y));
-    contour.push_back(cv::Point(quad_pts[2].x, quad_pts[2].y));
-    contour.push_back(cv::Point(quad_pts[3].x, quad_pts[3].y));
+
+    for (int i = 0; i < num_pts; ++i)
+        contour.push_back(cv::Point(in_pts[i].x, in_pts[i].y));
 
     const cv::Point *pts = (const cv::Point*)cv::Mat(contour).data;
     int npts = cv::Mat(contour).rows;
-    int width = std::max(1.0f, show_img->rows * .002f);
 
+    /* Draw quadrangle shape on perspective image. */
     cv::polylines(*show_img, &pts, &npts, 1, true, color, width, 8, 0);
+
+    /* Draw text.  */
+    cv::putText(*show_img, label_text, pt_text, cv::FONT_HERSHEY_COMPLEX_SMALL, font_size, black_color, 2 * font_size, CV_AA);
 }
 
 // ====================================================================

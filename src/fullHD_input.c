@@ -27,6 +27,8 @@
 #define HEIGHT 1080
 #define FRAME_SIZE_UYVY (WIDTH * HEIGHT * 2)
 
+#define USE_QUADS
+
 #ifdef OPENCV
 
 #include "http_stream.h"
@@ -323,8 +325,14 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     cv_Color color = PURPLE;
                     for (int dets = 0; dets < num_persons; dets++)
                     {
+#ifdef USE_QUADS
                         int retVal = detection_perspective_transform(person_detections[dets].x0, person_detections[dets].y0,
-                                person_detections[dets].width, person_detections[dets].height, &person_perspective_detections[person_indx]);
+                                person_detections[dets].x_center, person_detections[dets].y_center, person_detections[dets].width,
+                                person_detections[dets].height, &person_perspective_detections[person_indx]);
+#else
+                        int retVal = pixel_perspective_transform(person_detections[dets].x_center, person_detections[dets].y_center,
+                                &person_perspective_detections[person_indx].x0, &person_perspective_detections[person_indx].y0);
+#endif
                         if (retVal == 0)
                         {
                             int person_class_id = 0;
@@ -337,7 +345,11 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                             quad_pts[2].y = person_perspective_detections[person_indx].y2;
                             quad_pts[3].x = person_perspective_detections[person_indx].x3;
                             quad_pts[3].y = person_perspective_detections[person_indx].y3;
-                            draw_quadrangle(perspective_img, quad_pts, person_class_id);
+#ifdef USE_QUADS
+                            draw_custom_shape(perspective_img, quad_pts, 4, person_class_id, "person", person_detections[dets].prob);
+#else
+                            draw_custom_shape(perspective_img, quad_pts, 1, person_class_id, "person", person_detections[dets].prob);
+#endif
                             person_indx++;
                         }
                     }
@@ -361,8 +373,14 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     color = LIGHT_BLUE;
                     for (int dets = 0; dets < num_cars; dets++)
                     {
+#ifdef USE_QUADS
                         int retVal = detection_perspective_transform(car_detections[dets].x0, car_detections[dets].y0,
-                                car_detections[dets].width, car_detections[dets].height, &car_perspective_detections[car_indx]);
+                                car_detections[dets].x_center, car_detections[dets].y_center, car_detections[dets].width,
+                                car_detections[dets].height, &car_perspective_detections[car_indx]);
+#else
+                        int retVal = pixel_perspective_transform(car_detections[dets].x_center, car_detections[dets].y_center,
+                                &car_perspective_detections[car_indx].x0, &car_perspective_detections[car_indx].y0);
+#endif
                         if (retVal == 0)
                         {
                             int car_class_id = 2;
@@ -375,7 +393,11 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                             quad_pts[2].y = car_perspective_detections[car_indx].y2;
                             quad_pts[3].x = car_perspective_detections[car_indx].x3;
                             quad_pts[3].y = car_perspective_detections[car_indx].y3;
-                            draw_quadrangle(perspective_img, quad_pts, car_class_id);
+#ifdef USE_QUADS
+                            draw_custom_shape(perspective_img, quad_pts, 4, car_class_id, "car", car_detections[dets].prob);
+#else
+                            draw_custom_shape(perspective_img, quad_pts, 1, car_class_id, "car", car_detections[dets].prob);
+#endif
                             car_indx++;
                         }
                     }

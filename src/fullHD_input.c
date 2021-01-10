@@ -329,6 +329,9 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                         int retVal = detection_perspective_transform(person_detections[dets].x0, person_detections[dets].y0,
                                 person_detections[dets].x_center, person_detections[dets].y_center, person_detections[dets].width,
                                 person_detections[dets].height, &person_perspective_detections[person_indx]);
+
+                        conversion_quad_rect(person_detections[dets].width, person_detections[dets].height,
+                            &person_perspective_detections[person_indx]);
 #else
                         int retVal = pixel_perspective_transform(person_detections[dets].x_center, person_detections[dets].y_center,
                                 &person_perspective_detections[person_indx].x0, &person_perspective_detections[person_indx].y0);
@@ -377,6 +380,9 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                         int retVal = detection_perspective_transform(car_detections[dets].x0, car_detections[dets].y0,
                                 car_detections[dets].x_center, car_detections[dets].y_center, car_detections[dets].width,
                                 car_detections[dets].height, &car_perspective_detections[car_indx]);
+
+                        conversion_quad_rect(car_detections[dets].width, car_detections[dets].height,
+                            &car_perspective_detections[car_indx]);
 #else
                         int retVal = pixel_perspective_transform(car_detections[dets].x_center, car_detections[dets].y_center,
                                 &car_perspective_detections[car_indx].x0, &car_perspective_detections[car_indx].y0);

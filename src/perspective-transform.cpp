@@ -591,25 +591,25 @@ extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new)
 
 extern "C" int detection_perspective_transform(int x0, int y0, int x_center, int y_center, int width, int height, cv_Quadrangle* out)
 {
-    int retVal = pixel_perspective_transform(x0, y0, &out->x2, &out->y2);
+    int retVal = pixel_perspective_transform(x0, y0, &out->x0, &out->y0);
     if (retVal != 0)
     {
         printf("x0, y0 - bad locations\n");
         return 1;
     }
-    retVal = pixel_perspective_transform(x0 + width, y0, &out->x3, &out->y3);
+    retVal = pixel_perspective_transform(x0 + width, y0, &out->x1, &out->y1);
     if (retVal != 0)
     {
         printf("x1, y1 - bad locations\n");
         return 1;
     }
-    retVal = pixel_perspective_transform(x0, y0 + height, &out->x1, &out->y1);
+    retVal = pixel_perspective_transform(x0 + width, y0 + height, &out->x2, &out->y2);
     if (retVal != 0)
     {
         printf("x2, y2 - bad locations\n");
         return 1;
     }
-    retVal = pixel_perspective_transform(x0 + width, y0 + height, &out->x0, &out->y0);
+    retVal = pixel_perspective_transform(x0, y0 + height, &out->x3, &out->y3);
     if (retVal != 0)
     {
         printf("x3, y3 - bad locations\n");
@@ -625,8 +625,49 @@ extern "C" int detection_perspective_transform(int x0, int y0, int x_center, int
     return 0;
 }
 
-extern "C" void conversion_quad_rect(int x0, int y0, int width, int height, cv_Quadrangle* out)
+extern "C" void conversion_quad_rect(int i_width, int i_height, cv_Quadrangle* contour)
 {
+    /* Calculate area of the quad contour. */
+    std::vector<cv::Point> area_contour;
+    area_contour.push_back(cv::Point(contour->x0, contour->y0));
+    area_contour.push_back(cv::Point(contour->x1, contour->y1));
+    area_contour.push_back(cv::Point(contour->x2, contour->y2));
+    area_contour.push_back(cv::Point(contour->x3, contour->y3));
+
+    double P = cv::contourArea(area_contour);
+
+    /* P = (o_height)^2 * (i_width / i_height) */
+    int o_height = (int)std::sqrt(P * ((double)i_height / i_width));
+
+    /* P = o_width * o_height */
+    int o_width = (int)(P / o_height);
+
+    /*
+     * - Calculate coordinates of the result rectangle:
+     * 
+     *   (x0,y0)        w i d t h         (x1,y1)
+     *      *--------------------------------*
+     *      |               |                |
+     *      |               |                | h
+     *      |               |                | e
+     *      |---------------*                | i
+     *      |            (xc,yc)             | g
+     *      |                                | h
+     *      |                                | t
+     *      |                                |
+     *      *--------------------------------*
+     *   (x3,y3)                          (x2,y2)
+     * 
+     */
+    contour->x0 = contour->xc - (o_width / 2);
+    contour->y0 = contour->yc - (o_height / 2);
+    contour->x1 = contour->xc + (o_width / 2);
+    contour->y1 = contour->yc - (o_height / 2);
+    contour->x2 = contour->xc + (o_width / 2);
+    contour->y2 = contour->yc + (o_height / 2);
+    contour->x3 = contour->xc - (o_width / 2);
+    contour->y3 = contour->yc + (o_height / 2);
+
     return;
 }
 

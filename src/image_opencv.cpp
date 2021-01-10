@@ -1245,9 +1245,9 @@ extern "C" void draw_custom_shape(mat_cv* mat, const point_cv* in_pts, int num_p
 
     /* Display text on another location if a shape is a quad. */
     if (num_pts == 4)
-    {   
-        pt_text.x = in_pts[2].x;
-        pt_text.y = in_pts[2].y - 4;
+    {
+        pt_text.x = in_pts[0].x;
+        pt_text.y = in_pts[0].y - 4;
         width /= 8;
     }
 

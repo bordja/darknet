@@ -589,50 +589,14 @@ extern "C" int pixel_perspective_transform(int x, int y, int* x_new, int* y_new)
     return 0;
 }
 
-extern "C" int detection_perspective_transform(int x0, int y0, int x_center, int y_center, int width, int height, cv_Quadrangle* out)
-{
-    int retVal = pixel_perspective_transform(x0, y0, &out->x0, &out->y0);
-    if (retVal != 0)
-    {
-        printf("x0, y0 - bad locations\n");
-        return 1;
-    }
-    retVal = pixel_perspective_transform(x0 + width, y0, &out->x1, &out->y1);
-    if (retVal != 0)
-    {
-        printf("x1, y1 - bad locations\n");
-        return 1;
-    }
-    retVal = pixel_perspective_transform(x0 + width, y0 + height, &out->x2, &out->y2);
-    if (retVal != 0)
-    {
-        printf("x2, y2 - bad locations\n");
-        return 1;
-    }
-    retVal = pixel_perspective_transform(x0, y0 + height, &out->x3, &out->y3);
-    if (retVal != 0)
-    {
-        printf("x3, y3 - bad locations\n");
-        return 1;
-    }
-    retVal = pixel_perspective_transform(x_center, y_center, &out->xc, &out->yc);
-    if (retVal != 0)
-    {
-        printf("xc, yc - bad locations\n");
-        return 1;
-    }
-
-    return 0;
-}
-
-extern "C" void conversion_quad_rect(int i_width, int i_height, cv_Quadrangle* contour)
+static void conversion_quad_rect(int i_width, int i_height, cv_Quadrangle contour, cv_Detect* detection)
 {
     /* Calculate area of the quad contour. */
     std::vector<cv::Point> area_contour;
-    area_contour.push_back(cv::Point(contour->x0, contour->y0));
-    area_contour.push_back(cv::Point(contour->x1, contour->y1));
-    area_contour.push_back(cv::Point(contour->x2, contour->y2));
-    area_contour.push_back(cv::Point(contour->x3, contour->y3));
+    area_contour.push_back(cv::Point(contour.x0, contour.y0));
+    area_contour.push_back(cv::Point(contour.x1, contour.y1));
+    area_contour.push_back(cv::Point(contour.x2, contour.y2));
+    area_contour.push_back(cv::Point(contour.x3, contour.y3));
 
     double P = cv::contourArea(area_contour);
 
@@ -659,16 +623,73 @@ extern "C" void conversion_quad_rect(int i_width, int i_height, cv_Quadrangle* c
      *   (x3,y3)                          (x2,y2)
      * 
      */
-    contour->x0 = contour->xc - (o_width / 2);
-    contour->y0 = contour->yc - (o_height / 2);
-    contour->x1 = contour->xc + (o_width / 2);
-    contour->y1 = contour->yc - (o_height / 2);
-    contour->x2 = contour->xc + (o_width / 2);
-    contour->y2 = contour->yc + (o_height / 2);
-    contour->x3 = contour->xc - (o_width / 2);
-    contour->y3 = contour->yc + (o_height / 2);
+    detection->x0 = contour.xc - (o_width / 2);
+    detection->y0 = contour.yc - (o_height / 2);
+    detection->width = o_width;
+    detection->height = o_height;
+    detection->x_center = contour.xc;
+    detection->y_center = contour.yc;
 
     return;
+}
+
+extern "C" int detection_perspective_transform(const cv_Detect* const in_detection, cv_Detect* out_detection)
+{
+    cv_Quadrangle contour;
+
+    int x0 = in_detection->x0;
+    int y0 = in_detection->y0;
+
+    int x1 = in_detection->x0 + in_detection->width;
+    int y1 = in_detection->y0;
+
+    int x2 = in_detection->x0 + in_detection->width;
+    int y2 = in_detection->y0 + in_detection->height;
+
+    int x3 = in_detection->x0;
+    int y3 = in_detection->y0 + in_detection->height;
+
+    int xc = in_detection->x_center;
+    int yc = in_detection->y_center;
+
+    int retVal = pixel_perspective_transform(x0, y0, &contour.x0, &contour.y0);
+    if (retVal != 0)
+    {
+        printf("x0, y0 - bad locations\n");
+        return 1;
+    }
+    retVal = pixel_perspective_transform(x1, y1, &contour.x1, &contour.y1);
+    if (retVal != 0)
+    {
+        printf("x1, y1 - bad locations\n");
+        return 1;
+    }
+    retVal = pixel_perspective_transform(x2, y2, &contour.x2, &contour.y2);
+    if (retVal != 0)
+    {
+        printf("x2, y2 - bad locations\n");
+        return 1;
+    }
+    retVal = pixel_perspective_transform(x3, y3, &contour.x3, &contour.y3);
+    if (retVal != 0)
+    {
+        printf("x3, y3 - bad locations\n");
+        return 1;
+    }
+    retVal = pixel_perspective_transform(xc, yc, &contour.xc, &contour.yc);
+    if (retVal != 0)
+    {
+        printf("xc, yc - bad locations\n");
+        return 1;
+    }
+
+    /* Quad to Rectangle perspective conversion. */
+    int i_width = in_detection->width;
+    int i_height = in_detection->height;
+
+    conversion_quad_rect(i_width, i_height, contour, out_detection);
+
+    return 0;
 }
 
 extern "C" bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_window_name)

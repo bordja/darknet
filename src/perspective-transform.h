@@ -48,6 +48,15 @@ typedef struct cv_Quadrangle
     int xc, yc;     // center
 }cv_Quadrangle;
 
+typedef struct cv_Detect
+{
+    int x0, y0;
+    int x_center, y_center;
+    int width;
+    int height;
+    float prob;
+} cv_Detect;
+
 extern int pole_ids_init[4];
 extern uint16_t pole_perspective_loc_x[4];
 extern uint16_t pole_perspective_loc_y[4];
@@ -56,8 +65,7 @@ void cv_copy_to_input_perspective(void* input);
 void cv_copy_from_output_perspective(void* output);
 void deinit_perspective_params(void);
 int pixel_perspective_transform(int x, int y, int* x_new, int* y_new);
-int detection_perspective_transform(int x0, int y0, int x_center, int y_center, int width, int height, cv_Quadrangle* out);
-void conversion_quad_rect(int i_width, int i_height, cv_Quadrangle* contour);
+int detection_perspective_transform(const cv_Detect* const in_detection, cv_Detect* out_detection);
 bool mouse_click_and_param_init(void* init_bgr_frame, const char* cv_window_name);
 void get_perspective_transform(void);
 

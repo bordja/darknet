@@ -57,8 +57,8 @@ mat_cv* det_img;
 mat_cv* show_img;
 mat_cv* perspective_img;
 
-cv_Quadrangle car_perspective_detections[MAX_CAR_DETS];
-cv_Quadrangle person_perspective_detections[MAX_PERSON_DETS];
+cv_Detect car_perspective_detections[MAX_CAR_DETS];
+cv_Detect person_perspective_detections[MAX_PERSON_DETS];
 
 static const int thread_wait_ms = 1;
 static volatile int run_fetch_in_thread_fullHD = 0;
@@ -73,7 +73,7 @@ void *detect_in_thread_fullHD(void *ptr);
 void *detect_in_thread_sync_fullHD(void *ptr);
 double get_wall_time_fullHD();
 
-#define OUTPUT_PERSPECTIVE_PATH "/home/usorac/Desktop/Faculty/Master-rad/03-yolov4/01-original-fullHD/out_perspective_dets_v7/"
+#define OUTPUT_PERSPECTIVE_PATH "/home/usorac/Desktop/Faculty/Master-rad/03-yolov4/CKPT-5/out_perspective_dets_v8/"
 #define MAX_PATH_LENGTH 512
 #define VIDEO_FPS 5
 
@@ -95,8 +95,8 @@ void fullHD_input(int argc, char **argv)
     pole_ids_init[2] = CAMERA_1_POLE_3_ID;
     pole_ids_init[3] = CAMERA_1_POLE_4_ID;
     const int8_t cameraID_1 = 1;
-    const char* in_filename_1 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-L/Out1.yuv";
-    const char* in_timestamps_1 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-L/timestamp_1";
+    const char* in_filename_1 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-L/Out1.yuv";
+    const char* in_timestamps_1 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-L/timestamp_1";
     run_fullHD(cfg, weights, TRESH, names, classes, cameraID_1, in_filename_1, in_timestamps_1);
 
     /* Camera 2 - Yolov4 */
@@ -105,8 +105,8 @@ void fullHD_input(int argc, char **argv)
     pole_ids_init[2] = CAMERA_2_POLE_3_ID;
     pole_ids_init[3] = CAMERA_2_POLE_4_ID;
     const int8_t cameraID_2 = 2;
-    const char* in_filename_2 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-L/Out2.yuv";
-    const char* in_timestamps_2 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-L/timestamp_2";
+    const char* in_filename_2 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-L/Out2.yuv";
+    const char* in_timestamps_2 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-L/timestamp_2";
     run_fullHD(cfg, weights, TRESH, names, classes, cameraID_2, in_filename_2, in_timestamps_2);
 
     /* Camera 3 - Yolov4 */
@@ -115,8 +115,8 @@ void fullHD_input(int argc, char **argv)
     pole_ids_init[2] = CAMERA_3_POLE_3_ID;
     pole_ids_init[3] = CAMERA_3_POLE_4_ID;
     const int8_t cameraID_3 = 3;
-    const char* in_filename_3 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-R/Out2.yuv";
-    const char* in_timestamps_3 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-R/timestamp_2";
+    const char* in_filename_3 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-R/Out2.yuv";
+    const char* in_timestamps_3 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-R/timestamp_2";
     run_fullHD(cfg, weights, TRESH, names, classes, cameraID_3, in_filename_3, in_timestamps_3);
 
     /* Camera 4 - Yolov4 */
@@ -125,8 +125,8 @@ void fullHD_input(int argc, char **argv)
     pole_ids_init[2] = CAMERA_4_POLE_3_ID;
     pole_ids_init[3] = CAMERA_4_POLE_4_ID;
     const int8_t cameraID_4 = 4;
-    const char* in_filename_4 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-R/Out1.yuv";
-    const char* in_timestamps_4 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-2/DFG-R/timestamp_1";
+    const char* in_filename_4 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-R/Out1.yuv";
+    const char* in_timestamps_4 = "/home/usorac/Desktop/Faculty/Master-rad/01-frame-grabber/camera-inputs/stalak-2020-08-16/KPI-1/DFG-R/timestamp_1";
     run_fullHD(cfg, weights, TRESH, names, classes, cameraID_4, in_filename_4, in_timestamps_4);
 
     free_ptrs((void **)names, net_classes);
@@ -202,36 +202,58 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
         /*
          * - Ouput perspective format:
          * 
-         *  [0]                    -> Camera ID (1B)          --
+         *  ----------------------------------------------------
+         *  [0]                    -> Camera ID (1B)           |
+         *                                                     |
          *  [1:4]                  -> POLE_1_ID (4B)           |
          *  [5:8]                  -> POLE_2_ID (4B)           |
          *  [9:12]                 -> POLE_3_ID (4B)           |
          *  [13:16]                -> POLE_4_ID (4B)           |
+         *                                                     |
          *  [17:18]                -> pole_rel_1_x (2B)        |
          *  [19:20]                -> pole_rel_1_y (2B)        |- Camera/Stream Info
+         *                                                     |
          *  [21:22]                -> pole_rel_2_x (2B)        |
          *  [23:24]                -> pole_rel_2_y (2B)        |
+         *                                                     |
          *  [25:26]                -> pole_rel_3_x (2B)        |
          *  [27:28]                -> pole_rel_3_y (2B)        |
+         *                                                     |
          *  [29:30]                -> pole_rel_4_x (2B)        |
-         *  [31:32]                -> pole_rel_4_y (2B)       --
+         *  [31:32]                -> pole_rel_4_y (2B)        |
+         *  ----------------------------------------------------
          *
-         *  [33:40]                -> Frame_0_Timestamp (8B)  --
+         *  ----------------------------------------------------
+         *  [33:40]                -> Frame_0_Timestamp (8B)   |
          *  [41:42]                -> PersonNumber (2B)        |
+         *                                                     |
          *  [43:44]                -> x0 (2B)                  |
          *  [45:46]                -> y0 (2B)                  |
-         *  [47:48]                -> x1 (2B)                  |
-         *  [49:50]                -> y1 (2B)                  |
-         *              ...                                    |
+         *  [47:48]                -> width_0 (2B)             |
+         *  [49:50]                -> height_0 (2B)            |
+         *                                                     |
+         *  [51:52]                -> x1 (2B)                  |
+         *  [53:54]                -> y1 (2B)                  |
+         *  [55:56]                -> width_1 (2B)             |
+         *  [57:58]                -> height_1 (2B)            |
+         *               ...                                   |
          *                                                     |- Frame_0 Info
-         *  [(43+4*50):(43+4*50+1)]    -> CarNumer (2B)        |
-         *  [(43+4*50+2):(43+4*50+3)]  -> x0 (2B)              |
-         *  [(43+4*50+4):(43+4*50+5)]  -> y0 (2B)              |
-         *  [(43+4*50+6):(43+4*50+7)]  -> x1 (2B)              |
-         *  [(43+4*50+8):(43+4*50+9)]  -> y1 (2B)              |
-         *              ...                                    |
-         *                                                    --
-         *              ...
+         *  [(43+8*50+0):(43+8*50+1)]    -> CarNumer (2B)      |
+         *                                                     |
+         *  [(43+8*50+2):(43+8*50+3)]    -> x0 (2B)            |
+         *  [(43+8*50+4):(43+8*50+5)]    -> y0 (2B)            |
+         *  [(43+8*50+6):(43+8*50+7)]    -> width_0 (2B)       |
+         *  [(43+8*50+8):(43+8*50+9)]    -> height_0 (2B)      |
+         *                                                     |
+         *  [(43+8*50+10):(43+8*50+11)]  -> x1 (2B)            |
+         *  [(43+8*50+12):(43+8*50+13)]  -> y1 (2B)            |
+         *  [(43+8*50+14):(43+8*50+15)]  -> width_1 (2B)       |
+         *  [(43+8*50+16):(43+8*50+17)]  -> height_1 (2B)      |
+         *                                                     |
+         *               ...                                   |
+         *                                                     |
+         *  ----------------------------------------------------
+         *               ...
          */
         const char out_perspective[MAX_PATH_LENGTH];
         snprintf(out_perspective, MAX_PATH_LENGTH - 1, OUTPUT_PERSPECTIVE_PATH "out_perspective_%d", cameraID);
@@ -326,12 +348,8 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     for (int dets = 0; dets < num_persons; dets++)
                     {
 #ifdef USE_QUADS
-                        int retVal = detection_perspective_transform(person_detections[dets].x0, person_detections[dets].y0,
-                                person_detections[dets].x_center, person_detections[dets].y_center, person_detections[dets].width,
-                                person_detections[dets].height, &person_perspective_detections[person_indx]);
-
-                        conversion_quad_rect(person_detections[dets].width, person_detections[dets].height,
-                            &person_perspective_detections[person_indx]);
+                        int retVal = detection_perspective_transform((cv_Detect*)&person_detections[dets],
+                                &person_perspective_detections[person_indx]);
 #else
                         int retVal = pixel_perspective_transform(person_detections[dets].x_center, person_detections[dets].y_center,
                                 &person_perspective_detections[person_indx].x0, &person_perspective_detections[person_indx].y0);
@@ -342,12 +360,12 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                             point_cv quad_pts[4];
                             quad_pts[0].x = person_perspective_detections[person_indx].x0;
                             quad_pts[0].y = person_perspective_detections[person_indx].y0;
-                            quad_pts[1].x = person_perspective_detections[person_indx].x1;
-                            quad_pts[1].y = person_perspective_detections[person_indx].y1;
-                            quad_pts[2].x = person_perspective_detections[person_indx].x2;
-                            quad_pts[2].y = person_perspective_detections[person_indx].y2;
-                            quad_pts[3].x = person_perspective_detections[person_indx].x3;
-                            quad_pts[3].y = person_perspective_detections[person_indx].y3;
+                            quad_pts[1].x = person_perspective_detections[person_indx].x0 + person_perspective_detections[person_indx].width;
+                            quad_pts[1].y = person_perspective_detections[person_indx].y0;
+                            quad_pts[2].x = person_perspective_detections[person_indx].x0 + person_perspective_detections[person_indx].width;
+                            quad_pts[2].y = person_perspective_detections[person_indx].y0 + person_perspective_detections[person_indx].height;
+                            quad_pts[3].x = person_perspective_detections[person_indx].x0;
+                            quad_pts[3].y = person_perspective_detections[person_indx].y0 + person_perspective_detections[person_indx].height;
 #ifdef USE_QUADS
                             draw_custom_shape(perspective_img, quad_pts, 4, person_class_id, "person", person_detections[dets].prob);
 #else
@@ -361,15 +379,21 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     fstream_write((char*)&Persons, sizeof(Persons));
                     for (int dets = 0; dets < MAX_PERSON_DETS; dets++)
                     {
-                        uint16_t person_det_x = 0;
-                        uint16_t person_det_y = 0;
+                        uint16_t person_x0 = 0;
+                        uint16_t person_y0 = 0;
+                        uint16_t person_width = 0;
+                        uint16_t person_height = 0;
                         if (dets < Persons)
                         {
-                            person_det_x = (uint16_t)person_perspective_detections[dets].x0;
-                            person_det_y = (uint16_t)person_perspective_detections[dets].y0;
+                            person_x0 = (uint16_t)person_perspective_detections[dets].x0;
+                            person_y0 = (uint16_t)person_perspective_detections[dets].y0;
+                            person_width = (uint16_t)person_perspective_detections[dets].width;
+                            person_height = (uint16_t)person_perspective_detections[dets].height;
                         }
-                        fstream_write((char*)&person_det_x, sizeof(person_det_x));
-                        fstream_write((char*)&person_det_y, sizeof(person_det_y));
+                        fstream_write((char*)&person_x0, sizeof(person_x0));
+                        fstream_write((char*)&person_y0, sizeof(person_y0));
+                        fstream_write((char*)&person_width, sizeof(person_width));
+                        fstream_write((char*)&person_height, sizeof(person_height));
                     }
 
                     int car_indx = 0;
@@ -377,34 +401,34 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     for (int dets = 0; dets < num_cars; dets++)
                     {
 #ifdef USE_QUADS
-                        int retVal = detection_perspective_transform(car_detections[dets].x0, car_detections[dets].y0,
-                                car_detections[dets].x_center, car_detections[dets].y_center, car_detections[dets].width,
-                                car_detections[dets].height, &car_perspective_detections[car_indx]);
-
-                        conversion_quad_rect(car_detections[dets].width, car_detections[dets].height,
-                            &car_perspective_detections[car_indx]);
+                        int retVal = detection_perspective_transform((cv_Detect*)&car_detections[dets],
+                                &car_perspective_detections[car_indx]);
 #else
                         int retVal = pixel_perspective_transform(car_detections[dets].x_center, car_detections[dets].y_center,
                                 &car_perspective_detections[car_indx].x0, &car_perspective_detections[car_indx].y0);
 #endif
                         if (retVal == 0)
                         {
-                            int car_class_id = 2;
-                            point_cv quad_pts[4];
-                            quad_pts[0].x = car_perspective_detections[car_indx].x0;
-                            quad_pts[0].y = car_perspective_detections[car_indx].y0;
-                            quad_pts[1].x = car_perspective_detections[car_indx].x1;
-                            quad_pts[1].y = car_perspective_detections[car_indx].y1;
-                            quad_pts[2].x = car_perspective_detections[car_indx].x2;
-                            quad_pts[2].y = car_perspective_detections[car_indx].y2;
-                            quad_pts[3].x = car_perspective_detections[car_indx].x3;
-                            quad_pts[3].y = car_perspective_detections[car_indx].y3;
+                            int x_center = car_perspective_detections[car_indx].x_center;
+                            if ((x_center > pole_perspective_loc_x[0]) && (x_center < pole_perspective_loc_x[1]))
+                            {
+                                int car_class_id = 2;
+                                point_cv quad_pts[4];
+                                quad_pts[0].x = car_perspective_detections[car_indx].x0;
+                                quad_pts[0].y = car_perspective_detections[car_indx].y0;
+                                quad_pts[1].x = car_perspective_detections[car_indx].x0 + car_perspective_detections[car_indx].width;
+                                quad_pts[1].y = car_perspective_detections[car_indx].y0;
+                                quad_pts[2].x = car_perspective_detections[car_indx].x0 + car_perspective_detections[car_indx].width;
+                                quad_pts[2].y = car_perspective_detections[car_indx].y0 + car_perspective_detections[car_indx].height;
+                                quad_pts[3].x = car_perspective_detections[car_indx].x0;
+                                quad_pts[3].y = car_perspective_detections[car_indx].y0 + car_perspective_detections[car_indx].height;
 #ifdef USE_QUADS
-                            draw_custom_shape(perspective_img, quad_pts, 4, car_class_id, "car", car_detections[dets].prob);
+                                draw_custom_shape(perspective_img, quad_pts, 4, car_class_id, "car", car_detections[dets].prob);
 #else
-                            draw_custom_shape(perspective_img, quad_pts, 1, car_class_id, "car", car_detections[dets].prob);
+                                draw_custom_shape(perspective_img, quad_pts, 1, car_class_id, "car", car_detections[dets].prob);
 #endif
-                            car_indx++;
+                                car_indx++;
+                            }
                         }
                     }
 
@@ -412,15 +436,21 @@ void run_fullHD(char *cfgfile, char *weightfile, float thresh, char **names, int
                     fstream_write((char*)&Cars, sizeof(Cars));
                     for (int dets = 0; dets < MAX_CAR_DETS; dets++)
                     {
-                        uint16_t car_det_x = 0;
-                        uint16_t car_det_y = 0;
+                        uint16_t car_x0 = 0;
+                        uint16_t car_y0 = 0;
+                        uint16_t car_width = 0;
+                        uint16_t car_height = 0;
                         if (dets < Cars)
                         {
-                            car_det_x = (uint16_t)car_perspective_detections[dets].x0;
-                            car_det_y = (uint16_t)car_perspective_detections[dets].y0;
+                            car_x0 = (uint16_t)car_perspective_detections[dets].x0;
+                            car_y0 = (uint16_t)car_perspective_detections[dets].y0;
+                            car_width = (uint16_t)car_perspective_detections[dets].width;
+                            car_height = (uint16_t)car_perspective_detections[dets].height;
                         }
-                        fstream_write((char*)&car_det_x, sizeof(car_det_x));
-                        fstream_write((char*)&car_det_y, sizeof(car_det_y));
+                        fstream_write((char*)&car_x0, sizeof(car_x0));
+                        fstream_write((char*)&car_y0, sizeof(car_y0));
+                        fstream_write((char*)&car_width, sizeof(car_width));
+                        fstream_write((char*)&car_height, sizeof(car_height));
                     }
                     draw_frame_ID(perspective_img, (int)frame_id);
                     write_frame_cv(out_perspective_video, perspective_img);
